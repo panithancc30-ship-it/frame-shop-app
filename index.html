@@ -110,6 +110,51 @@ table.bd th:first-child,table.bd td:first-child{text-align:left}
 .qnums .lt b{display:block;font-size:18px;color:var(--ink);font-variant-numeric:tabular-nums}
 .qacts{display:flex;gap:16px;margin-top:4px}
 .empty{text-align:center;color:var(--mute);padding:22px 8px}
+.top .right{display:flex;align-items:center;gap:8px;flex:none}
+.pill{font-size:12px;border-radius:999px;padding:4px 10px;background:#fff2;border:1px solid #fff4;color:#fff;white-space:nowrap}
+.pill.wait{background:#e3b65a;border-color:#e3b65a;color:#3b2a05}
+.pill.bad{background:var(--bad);border-color:var(--bad)}
+.seg.wide{display:flex;margin-bottom:12px;background:#fff}
+.seg.wide button{flex:1;padding:10px 6px;font-size:14.5px}
+.seg i,.nav i.red{font-style:normal;background:var(--bad);color:#fff;border-radius:999px;font-size:11px;padding:0 6px}
+.seg i{margin-left:4px}
+.seg button.on i{background:#fff;color:var(--bad)}
+.tw{overflow-x:auto}
+table.st{width:100%;border-collapse:collapse;font-size:14.5px}
+table.st th{font-size:12.5px;color:var(--mute);text-align:left;padding:6px 8px;border-bottom:2px solid var(--line);white-space:nowrap}
+table.st td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+table.st small,.mv small{display:block;color:var(--mute);font-size:12px;font-weight:400}
+table.st .n,.mv .n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+table.st .a{text-align:right;white-space:nowrap}
+table.st .a .link{margin-left:12px}
+table.st tr.low td{background:#fdf1ef}
+.warn{color:var(--bad)!important;font-weight:600}
+.st .lbl{display:none}
+.brand>div{min-width:0}
+.brand small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:899px){ /* จอมือถือ: แสดงสต๊อกเป็นรายการ 2 บรรทัดต่อวัสดุ */
+  table.st thead{display:none}
+  table.st tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:10px 6px;border-bottom:1px solid var(--line)}
+  table.st tr.low{background:#fdf1ef;border-radius:8px}
+  table.st td{border:0;padding:0;background:none!important}
+  table.st td:nth-child(2){grid-column:2;grid-row:1}
+  table.st td.re{grid-column:1;grid-row:2;text-align:left;font-size:12.5px;color:var(--mute)}
+  table.st td.re small{display:inline;margin-left:6px}
+  table.st td.a{grid-column:2;grid-row:2}
+  .st .lbl{display:inline}
+}
+.mv{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}
+.pos{color:var(--good)}
+.neg{color:var(--bad)}
+.bl{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px;background:#fdfcf9}
+.inf{font-size:12.5px;color:var(--mute);margin-top:6px}
+.tag{font-size:11.5px;border-radius:999px;padding:1px 8px;background:var(--pri-soft);color:var(--pri);font-weight:600;white-space:nowrap}
+.tag.st-ordered{background:var(--acc-soft);color:var(--acc)}
+.tag.st-done{background:#e3f3ea;color:var(--good)}
+.tag.st-cancel{background:#f6dcda;color:var(--bad)}
+.sbar{flex-wrap:wrap}
+.sbar .sbtn{display:flex;gap:8px;flex-wrap:wrap}
+input:disabled{background:#f1ede4;color:var(--mute)}
 .docwrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:#e9e5dc;padding:10px}
 .doc{background:#fff;color:#111;padding:28px;min-width:640px;max-width:800px;margin:0 auto;font-size:13px;line-height:1.45}
 .doc h1{margin:0;font-size:24px;color:var(--pri);line-height:1.1}
@@ -191,7 +236,7 @@ dialog::backdrop{background:#0007}
 <div class="app">
   <header class="top">
     <div class="brand"><span class="mark"></span><div><b id="hShop">ร้านกรอบรูป</b><small>ระบบคำนวณราคาและใบเสนอราคา</small></div></div>
-    <button class="ghost" id="costBtn" onclick="A.toggleCost()"></button>
+    <div class="right"><span id="syncPill" class="pill" hidden></span><button class="ghost" id="costBtn" onclick="A.toggleCost()"></button></div>
   </header>
   <nav class="nav" id="nav"></nav>
   <main>
@@ -256,7 +301,7 @@ const JOBS=[
   {id:'coat',name:'เคลือบภาพ',doc:'งานเคลือบภาพ',rows:[['media',null],['coat','c_gloss'],['back',null]]},
   {id:'custom',name:'กำหนดเอง',doc:'งานสั่งทำ',rows:[]}
 ];
-const I=(id,cat,name,basis,cost,price,x={})=>({id,cat,name,basis,cost,price,face:'',waste:'',min:'',dq:'',...x});
+const I=(id,cat,name,basis,cost,price,x={})=>({id,cat,name,basis,cost,price,face:'',waste:'',min:'',dq:'',punit:'',pqty:'',stock:'',reorder:'',...x});
 const DEF_ITEMS=[
   I('m_photo','media','กระดาษโฟโต้ (พิมพ์ภาพ)','area_sqft',60,150),
   I('m_canvas','media','แคนวาส (พิมพ์ภาพ)','area_sqft',90,220),
@@ -300,7 +345,7 @@ const TABS=[
   {id:'calc',name:'คำนวณราคา',icon:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/>'},
   {id:'quote',name:'ใบเสนอราคา',icon:'<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/>'},
   {id:'table',name:'ตารางราคา',icon:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16"/>'},
-  {id:'items',name:'วัสดุ/ต้นทุน',icon:'<path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/>'},
+  {id:'items',name:'วัสดุ/สต๊อก',icon:'<path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/>'},
   {id:'settings',name:'ตั้งค่า',icon:'<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>'}
 ];
 
@@ -311,7 +356,8 @@ function fresh(){return {v:1,tab:'calc',hideCost:false,itemCat:'frame',
   shop:{name:'ร้านกรอบรูป',addr:'',phone:'',line:'',tax:'',logo:'',pay:''},
   cfg:{unit:'in',markup:100,round:5,vatMode:'none',vatRate:7,wrap:2.5,valid:15,prefix:'QT',nextNo:1,ship:DEF_SHIP,
        terms:'1. ชำระเงินมัดจำร้อยละ 50 เมื่อยืนยันการสั่งทำ และชำระส่วนที่เหลือในวันรับสินค้า\n2. ระยะเวลาดำเนินการประมาณ 3–7 วันทำการ นับจากวันที่ยืนยันแบบ'},
-  items:DEF_ITEMS.map(x=>({...x})),templates:{},sizes:DEF_SIZES.slice(),quotes:[],draft:null,calc:null,editing:null,table:null}}
+  items:DEF_ITEMS.map(x=>({...x})),templates:{},sizes:DEF_SIZES.slice(),quotes:[],draft:null,calc:null,editing:null,table:null,
+  itemView:'stock',stockLow:false,buy:null,purchases:[],moves:[],qlist:[],queue:[],dirtyItems:{},dirtySet:false,cloud:null}}
 function load(){
   let d=null;try{d=JSON.parse(localStorage.getItem(KEY))}catch(e){}
   S=fresh();
@@ -320,6 +366,10 @@ function load(){
 }
 function ensure(){
   if(!Array.isArray(S.items))S.items=DEF_ITEMS.map(x=>({...x}));
+  ['quotes','purchases','moves','qlist','queue'].forEach(k=>{if(!Array.isArray(S[k]))S[k]=[]});
+  if(!S.dirtyItems)S.dirtyItems={};
+  if(!['stock','buy','list'].includes(S.itemView))S.itemView='stock';
+  if(!S.buy||!Array.isArray(S.buy.lines))S.buy=newBuy();
   if(!S.draft)S.draft=newDraft();
   if(!S.calc)S.calc=newJob('frame');
   if(!S.table)S.table={title:'ตารางราคา',job:{...newJob('frame'),unit:'in',matB:2},colCat:'frame',colItems:[],off:[],showCost:false,showShip:false};
@@ -343,6 +393,21 @@ const itemById=id=>id?S.items.find(i=>i.id===id):null;
 const unitPrice=it=>(it.price===''||it.price==null)?num(it.cost)*(1+num(S.cfg.markup)/100):num(it.price);
 const roundUp=x=>{const s=num(S.cfg.round);return s>0?Math.ceil(x/s-1e-9)*s:Math.round(x*100)/100};
 const uLabel=j=>j.unit==='cm'?'ซม.':'นิ้ว';
+
+/* ---------- สิทธิ์ผู้ใช้และสต๊อก ---------- */
+const cloudOn=()=>!!(S.cloud&&S.cloud.url&&S.cloud.pin);
+const isStaff=()=>cloudOn()&&S.cloud.role==='staff';
+const HC=()=>S.hideCost||isStaff(); // ซ่อนต้นทุนรวมและกำไรของงาน (พนักงานถูกซ่อนเสมอ)
+const SC=()=>S.table.showCost&&!isStaff();
+const who=()=>isStaff()?'พนักงาน':'เจ้าของ';
+const bUnit=it=>(BASES[it.basis]||BASES.job).u;
+const stockable=it=>!!it&&it.cat!=='labor'&&['len','area','piece'].includes((BASES[it.basis]||{}).kind);
+const tracked=it=>stockable(it)&&it.stock!==''&&it.stock!=null;
+const isLow=it=>tracked(it)&&num(it.stock)<=num(it.reorder);
+const r3=x=>Math.round(x*1000)/1000;
+const fmtTs=ts=>{const d=new Date(ts);return isNaN(d)?'':d.toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'})+' '+d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})};
+const newBuyLine=()=>({id:uid(),itemId:'',qty:'',punit:'',pqty:'',unitPrice:'',disc:''});
+const newBuy=()=>({date:todayISO(),supplier:'',doc:'',vat:false,lines:[newBuyLine()]});
 function parseSize(s){const m=String(s).trim().match(/^(?:(.+?)\s*=\s*)?([\d.]+)\s*[xX×*]\s*([\d.]+)$/);if(!m)return null;const w=num(m[2]),h=num(m[3]);if(!w||!h)return null;return {key:s.trim(),label:m[1]?`${m[1]} (${m[2]}×${m[3]}")`:`${m[2]}×${m[3]}"`,short:m[1]||`${m[2]}×${m[3]}`,w,h}}
 const sizeList=()=>S.sizes.map(parseSize).filter(Boolean);
 function shipFor(w,h){const u=w+h;const tiers=String(S.cfg.ship||'').split('\n').map(l=>l.split('=').map(num)).filter(a=>a.length===2&&a[0]>0).sort((a,b)=>a[0]-b[0]);for(const [lim,p] of tiers)if(u<=lim)return p;return tiers.length?tiers[tiers.length-1][1]:0}
@@ -367,7 +432,7 @@ function calcJob(j){
     if(B.kind!=='piece'&&B.kind!=='job')q*=1+num(it.waste)/100;
     const cost=q*num(it.cost);let price=q*unitPrice(it);
     if(num(it.min)>0&&q>0&&price<num(it.min))price=num(it.min);
-    return {id:r.id,name:it.name,q,u:B.u,cost,price};
+    return {id:r.id,itemId:it.id,name:it.name,q,u:B.u,cost,price};
   });
   j.extras.forEach(e=>parts.push({id:e.id,name:e.name||'รายการเพิ่มเติม',q:1,u:'งาน',cost:num(e.cost),price:num(e.price)}));
   const cost=parts.reduce((a,p)=>a+p.cost,0),raw=parts.reduce((a,p)=>a+p.price,0),auto=roundUp(raw);
@@ -414,7 +479,7 @@ function partsEditor(j,ctx){
       <select aria-label="เพิ่มวัสดุหรือบริการ" onchange="A.rowAdd('${ctx}',this.value)"><option value="">＋ เพิ่มวัสดุ / บริการ…</option>${CATS.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select>
       <button class="btn o sm" onclick="A.exAdd('${ctx}')">＋ รายการเพิ่มเติม</button>
     </div>
-    <div style="margin-top:8px"><button class="link" onclick="A.saveTpl('${ctx}')">บันทึกชุดวัสดุนี้เป็นค่าเริ่มต้นของประเภทงานนี้</button></div>`;
+    ${isStaff()?'':`<div style="margin-top:8px"><button class="link" onclick="A.saveTpl('${ctx}')">บันทึกชุดวัสดุนี้เป็นค่าเริ่มต้นของประเภทงานนี้</button></div>`}`;
 }
 function fillParts(root,j,c){
   $$('.pval',root).forEach(e=>{const p=c.parts.find(x=>x.id===e.dataset.row);e.innerHTML=p&&(c.w>0||['ชิ้น','งาน'].includes(p.u))?`${fmtQ(p.q)} ${p.u}<b>${fmt(p.price)} ฿</b>`:''});
@@ -453,7 +518,7 @@ function renderCalc(){
         <button class="btn block" onclick="A.addToQuote()">${ed?'บันทึกการแก้ไข':'＋ เพิ่มในใบเสนอราคา'}</button>
         <button class="btn o block sm" onclick="A.clearCalc()">ล้างข้อมูลและเริ่มใหม่</button>
       </div>
-      <details id="calcBd"${S.hideCost?'':' open'}><summary>รายละเอียดการคำนวณราคา</summary><div id="calcBdBody"></div></details>
+      <details id="calcBd"${HC()?'':' open'}><summary>รายละเอียดการคำนวณราคา</summary><div id="calcBdBody"></div></details>
     </section>
   </div></div>
   <div class="pricebar"><div><small>ราคาขายต่อชิ้น</small><b id="pbPrice"></b></div><button class="btn" onclick="A.addToQuote()">${ed?'บันทึกการแก้ไข':'＋ เพิ่มในใบเสนอราคา'}</button></div>`;
@@ -464,18 +529,55 @@ function updCalc(){
   $('#calcNums').innerHTML=`<div class="big"><span>ราคาขายต่อชิ้น</span><b>฿${fmtP(c.unit)}</b></div>
     ${c.qty>1?`<div class="ln"><span>รวม ${fmt(c.qty)} ชิ้น</span><b>฿${fmtP(c.total)}</b></div>`:''}
     ${j.override!==''?`<div class="ln mute"><span>ราคาที่คำนวณได้</span><span>฿${fmtP(c.auto)}</span></div>`:''}
-    ${S.hideCost?'':`<div class="ln"><span>ต้นทุนต่อชิ้น</span><span>฿${fmt(c.cost,2)}</span></div>
+    ${HC()?'':`<div class="ln"><span>ต้นทุนต่อชิ้น</span><span>฿${fmt(c.cost,2)}</span></div>
     <div class="ln ${c.profit<0?'bad':'good'}"><span>กำไรต่อชิ้น</span><span>฿${fmt(c.profit,2)} (${fmt(c.margin)}%)</span></div>`}
     ${c.w>0&&c.h>0?'':'<p class="hint">กรุณาระบุขนาดชิ้นงาน ระบบจะคำนวณราคาตามขนาดโดยอัตโนมัติ</p>'}`;
-  $('#calcBdBody').innerHTML=c.parts.length?`<table class="bd"><tr><th>รายการ</th><th>ปริมาณ</th>${S.hideCost?'':'<th>ต้นทุน</th>'}<th>ราคา</th></tr>
-    ${c.parts.map(p=>`<tr><td>${esc(p.name)}</td><td>${fmtQ(p.q)} ${p.u}</td>${S.hideCost?'':`<td>${fmt(p.cost,2)}</td>`}<td>${fmt(p.price,2)}</td></tr>`).join('')}
-    <tr><th>รวม (ก่อนปัดเศษ)</th><th></th>${S.hideCost?'':`<th>${fmt(c.cost,2)}</th>`}<th>${fmt(c.raw,2)}</th></tr></table>`:'<p class="hint">ยังไม่ได้เลือกวัสดุ</p>';
+  $('#calcBdBody').innerHTML=c.parts.length?`<table class="bd"><tr><th>รายการ</th><th>ปริมาณ</th>${HC()?'':'<th>ต้นทุน</th>'}<th>ราคา</th></tr>
+    ${c.parts.map(p=>`<tr><td>${esc(p.name)}</td><td>${fmtQ(p.q)} ${p.u}</td>${HC()?'':`<td>${fmt(p.cost,2)}</td>`}<td>${fmt(p.price,2)}</td></tr>`).join('')}
+    <tr><th>รวม (ก่อนปัดเศษ)</th><th></th>${HC()?'':`<th>${fmt(c.cost,2)}</th>`}<th>${fmt(c.raw,2)}</th></tr></table>`:'<p class="hint">ยังไม่ได้เลือกวัสดุ</p>';
   $('#pbPrice').textContent='฿'+fmtP(c.unit);
 }
 
 /* ---------- TAB: ใบเสนอราคา ---------- */
-function genNo(){const d=new Date();return `${S.cfg.prefix||'QT'}-${pad((d.getFullYear()+543)%100)}${pad(d.getMonth()+1)}-${pad(S.cfg.nextNo,3)}`}
-function newDraft(){return {id:uid(),no:genNo(),docType:'quote',date:todayISO(),valid:S.cfg.valid,cust:{name:'',phone:'',addr:'',tax:''},lines:[],discType:'amt',disc:'',vatMode:S.cfg.vatMode,deposit:'',note:'',dirty:false,savedOnce:false}}
+function genNo(){
+  const d=new Date(),base=`${S.cfg.prefix||'QT'}-${pad((d.getFullYear()+543)%100)}${pad(d.getMonth()+1)}`;
+  const used=[...S.qlist,...S.quotes].map(x=>String(x.no||'')).filter(n=>n.startsWith(base+'-')).map(n=>(parseInt(n.slice(base.length+1),10)||0)+1);
+  return `${base}-${pad(Math.max(cloudOn()?1:num(S.cfg.nextNo)||1,...used),3)}`;
+}
+function newDraft(){return {id:uid(),no:genNo(),docType:'quote',date:todayISO(),valid:S.cfg.valid,cust:{name:'',phone:'',addr:'',tax:''},lines:[],discType:'amt',disc:'',vatMode:S.cfg.vatMode,deposit:'',note:'',status:'quote',by:'',dirty:false,savedOnce:false}}
+const STATUS={quote:'เสนอราคา',ordered:'ยืนยันสั่งทำแล้ว',done:'ส่งมอบแล้ว',cancel:'ยกเลิก'};
+const LQ={q:'',st:''};
+const isOn=s=>s==='ordered'||s==='done'; // สถานะที่ตัดสต๊อกแล้ว
+function quoteMeta(q){const t=quoteTotals(q);return {total:t.total,net:q.vatMode==='incl'?t.after-t.vat:t.after}}
+function cleanQuote(q){const c=clone(q);delete c.dirty;return c}
+function localMeta(q){const t=quoteTotals(q);return {id:q.id,no:q.no,date:q.date,docType:q.docType,customer:q.cust.name,phone:q.cust.phone,total:t.total,profit:t.profit,status:q.status||'quote',by:q.by||'',updated:q.updated}}
+const quoteList=()=>cloudOn()?S.qlist:S.quotes.map(localMeta);
+function storeQuote(q){ // เก็บสำเนาในเครื่อง และปรับรายการในประวัติ
+  const c=clone(q),i=S.quotes.findIndex(x=>x.id===q.id);if(i>=0)S.quotes[i]=c;else S.quotes.unshift(c);
+  if(cloudOn()){if(S.quotes.length>60)S.quotes.length=60;const m=localMeta(q),k=S.qlist.findIndex(x=>x.id===q.id);if(k>=0)S.qlist[k]=m;else S.qlist.unshift(m)}
+}
+function quoteUses(q){ // ปริมาณวัสดุที่งานในเอกสารนี้ใช้ รวมตามวัสดุ
+  const m={};q.lines.forEach(l=>{if(l.kind!=='job'||!l.job)return;calcJob(l.job).parts.forEach(p=>{const it=itemById(p.itemId);if(stockable(it))m[it.id]=(m[it.id]||0)+p.q*num(l.qty)})});
+  return Object.entries(m).map(([itemId,qty])=>({itemId,qty:r3(qty)}));
+}
+function statusBar(q){
+  const s=q.status||'quote',b=(st,t,c='')=>`<button class="btn sm ${c}" onclick="A.setStatus('${st}')">${t}</button>`;
+  return `<div class="banner sbar"><span>สถานะ: <span class="tag st-${s}">${STATUS[s]}</span>${q.by?` · จัดทำโดย${esc(q.by)}`:''}</span><span class="sbtn">${
+    s==='quote'?b('ordered','ลูกค้ายืนยันสั่งทำ'):s==='ordered'?b('done','ส่งมอบแล้ว')+b('cancel','ยกเลิกงาน','o'):s==='done'?b('cancel','ยกเลิกงาน','o'):b('quote','กลับเป็นเสนอราคา','o')}</span></div>`;
+}
+function listRows(){
+  const k=LQ.q.trim().toLowerCase(),rows=quoteList().filter(m=>(!LQ.st||(m.status||'quote')===LQ.st)&&(!k||[m.no,m.customer,m.phone].some(x=>String(x||'').toLowerCase().includes(k))));
+  $('#lqRows').innerHTML=rows.map(m=>`<div class="sq"><div style="display:flex;justify-content:space-between;gap:10px"><span><b>${esc(m.no)}</b> · ${esc((DOCS[m.docType]||DOCS.quote)[0])} <span class="tag st-${m.status||'quote'}">${STATUS[m.status||'quote']}</span></span><b>฿${fmt(m.total,2)}</b></div>
+    <div class="mute" style="font-size:13.5px">${esc(m.customer||'ไม่ระบุชื่อลูกค้า')} · ${thDate(toDate(m.date))}${m.by?' · '+esc(m.by):''}${!HC()&&m.profit!=null&&m.profit!==''?` · กำไร ฿${fmt(m.profit,2)}`:''}</div>
+    <div class="qacts"><button class="link" onclick="A.openQuote('${m.id}')">เปิด</button><button class="link" onclick="A.dupQuote('${m.id}')">ทำสำเนาเป็นเอกสารใหม่</button>${isStaff()?'':`<button class="link bad" onclick="A.delQuote('${m.id}')">ลบ</button>`}</div></div>`).join('')||'<div class="empty">ไม่พบเอกสาร</div>';
+}
+async function fetchQuote(id){ // ดึงเอกสารฉบับเต็ม: จากระบบกลางถ้าเชื่อมต่อได้ ไม่เช่นนั้นใช้สำเนาในเครื่อง
+  const local=S.quotes.find(q=>q.id===id);
+  if(!cloudOn()||S.queue.some(o=>o.data&&(o.data.id===id||(o.data.quote&&o.data.quote.id===id))))return local?clone(local):null;
+  try{const r=await api('getQuote',{id});if(r.ok){r.quote.savedOnce=true;r.quote.dirty=false;return r.quote}}catch(e){}
+  if(local){toast('เชื่อมต่อไม่ได้ จึงแสดงสำเนาที่เก็บไว้ในอุปกรณ์นี้');return clone(local)}
+  toast('ไม่สามารถเปิดเอกสารได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต');return null;
+}
 function quoteTotals(q){
   const sub=q.lines.reduce((a,l)=>a+num(l.unit)*num(l.qty),0),cost=q.lines.reduce((a,l)=>a+num(l.cost)*num(l.qty),0);
   const disc=Math.min(sub,q.discType==='pct'?sub*num(q.disc)/100:num(q.disc)),after=sub-disc,r=num(S.cfg.vatRate);
@@ -486,7 +588,8 @@ function quoteTotals(q){
 function renderQuote(){
   const q=S.draft;
   $('#tab-quote').innerHTML=`
-  <div class="toolbar"><button class="btn o sm" onclick="A.newQuote()">＋ สร้างเอกสารใหม่</button><button class="btn o sm" onclick="A.showList()">เอกสารที่บันทึกไว้ (${S.quotes.length})</button></div>
+  <div class="toolbar"><button class="btn o sm" onclick="A.newQuote()">＋ สร้างเอกสารใหม่</button><button class="btn o sm" onclick="A.showList()">ประวัติเอกสาร (${quoteList().length})</button></div>
+  ${statusBar(q)}
   <div class="two"><div>
   <section class="card"><h2>ข้อมูลเอกสารและลูกค้า</h2>
     <div class="grid">
@@ -539,7 +642,7 @@ function updQuote(){
     ${q.vatMode==='incl'?`<div class="ln mute"><span>(รวมภาษีมูลค่าเพิ่ม ${num(S.cfg.vatRate)}% จำนวน ฿${fmt(t.vat,2)})</span><span></span></div>`:''}
     <div class="ln tot"><span>จำนวนเงินรวมทั้งสิ้น</span><span>฿${fmt(t.total,2)}</span></div>
     ${t.dep?`<div class="ln"><span>เงินมัดจำ</span><span>฿${fmt(t.dep,2)}</span></div><div class="ln"><span>ยอดคงเหลือที่ต้องชำระ</span><b>฿${fmt(t.bal,2)}</b></div>`:''}
-    ${S.hideCost?'':`<div class="ln mute" style="margin-top:6px"><span>ต้นทุนรวม (ไม่แสดงในเอกสาร)</span><span>฿${fmt(t.cost,2)}</span></div><div class="ln ${t.profit<0?'bad':'good'}"><span>กำไรโดยประมาณ</span><span>฿${fmt(t.profit,2)}</span></div>`}`;
+    ${HC()?'':`<div class="ln mute" style="margin-top:6px"><span>ต้นทุนรวม (ไม่แสดงในเอกสาร)</span><span>฿${fmt(t.cost,2)}</span></div><div class="ln ${t.profit<0?'bad':'good'}"><span>กำไรโดยประมาณ</span><span>฿${fmt(t.profit,2)}</span></div>`}`;
   $('#qDoc').innerHTML=docHTML(q);
 }
 function shopHead(){const s=S.shop;return `<div class="shop">${s.logo?`<img src="${s.logo}" alt="">`:''}<div><b>${esc(s.name)}</b>
@@ -610,7 +713,7 @@ function renderTable(){
     <div class="grid" style="margin-top:10px">
       <label class="f wide">ชื่อตาราง<input type="text" value="${esc(T.title)}" oninput="A.tblSet('title',this.value,1)"></label>
       <label class="chk"><input type="checkbox"${T.showShip?' checked':''} onchange="A.tblSet('showShip',this.checked,1)"> แสดงคอลัมน์ค่าจัดส่ง</label>
-      <label class="chk"><input type="checkbox"${T.showCost?' checked':''} onchange="A.tblSet('showCost',this.checked,1)"> แสดงต้นทุน (สำหรับใช้ภายใน)</label>
+      ${isStaff()?'':`<label class="chk"><input type="checkbox"${T.showCost?' checked':''} onchange="A.tblSet('showCost',this.checked,1)"> แสดงต้นทุน (สำหรับใช้ภายใน)</label>`}
     </div>
   </section>
   <div class="toolbar"><button class="btn" onclick="A.printTable()">พิมพ์ / บันทึกเป็น PDF</button><button class="btn o" onclick="A.csvTable()">ส่งออกเป็น Excel (CSV)</button><button class="btn o" onclick="A.copyTable()">คัดลอกตาราง</button></div>
@@ -625,42 +728,129 @@ function tableHTML(){
   return `<div class="doc pt"><div class="dh">${shopHead()}<div class="meta"><h1>${esc(T.title||'ตารางราคา')}</h1><div style="margin-top:6px">${esc(JOBS.find(x=>x.id===T.job.type).doc)}</div><div>ราคา ณ วันที่ ${thDate(new Date())}</div></div></div>
   ${specShown?`<p style="margin:10px 0"><b>รายละเอียดวัสดุ:</b> ${esc(specShown)}</p>`:'<p></p>'}
   <table><thead><tr><th class="l">ขนาด (นิ้ว)</th>${d.cols.map(c=>`<th>${esc(c)}</th>`).join('')}${T.showShip?'<th>ค่าจัดส่ง</th>':''}</tr></thead><tbody>
-  ${d.rows.map(r=>`<tr><td class="l"><b>${esc(r.s.label)}</b></td>${r.cells.map(c=>`<td><b>${fmtP(c.price)}</b>${T.showCost?`<small>ต้นทุน ${fmt(c.cost)} · กำไร ${fmt(c.price-c.cost)}</small>`:''}</td>`).join('')}${T.showShip?`<td>${fmtP(r.ship)}</td>`:''}</tr>`).join('')||'<tr><td colspan="9" style="padding:18px;color:#888">ยังไม่ได้เลือกขนาดที่ต้องการแสดง</td></tr>'}
-  </tbody></table><div class="foot">หน่วย: บาท · สำหรับขนาดอื่นนอกเหนือจากที่ระบุ กรุณาสอบถามราคาเพิ่มเติม${T.showCost?' · เอกสารสำหรับใช้ภายในเท่านั้น':''}</div></div>`;
+  ${d.rows.map(r=>`<tr><td class="l"><b>${esc(r.s.label)}</b></td>${r.cells.map(c=>`<td><b>${fmtP(c.price)}</b>${SC()?`<small>ต้นทุน ${fmt(c.cost)} · กำไร ${fmt(c.price-c.cost)}</small>`:''}</td>`).join('')}${T.showShip?`<td>${fmtP(r.ship)}</td>`:''}</tr>`).join('')||'<tr><td colspan="9" style="padding:18px;color:#888">ยังไม่ได้เลือกขนาดที่ต้องการแสดง</td></tr>'}
+  </tbody></table><div class="foot">หน่วย: บาท · สำหรับขนาดอื่นนอกเหนือจากที่ระบุ กรุณาสอบถามราคาเพิ่มเติม${SC()?' · เอกสารสำหรับใช้ภายในเท่านั้น':''}</div></div>`;
 }
 function tableMatrix(){
   const T=S.table,d=tableData(),head=['ขนาด (นิ้ว)'];
-  d.cols.forEach(c=>{head.push(c);if(T.showCost)head.push('ต้นทุน: '+c)});if(T.showShip)head.push('ค่าจัดส่ง');
-  return [head,...d.rows.map(r=>{const a=[r.s.label.replace(/"/g,'')];r.cells.forEach(c=>{a.push(c.price);if(T.showCost)a.push(Math.round(c.cost*100)/100)});if(T.showShip)a.push(r.ship);return a})];
+  d.cols.forEach(c=>{head.push(c);if(SC())head.push('ต้นทุน: '+c)});if(T.showShip)head.push('ค่าจัดส่ง');
+  return [head,...d.rows.map(r=>{const a=[r.s.label.replace(/"/g,'')];r.cells.forEach(c=>{a.push(c.price);if(SC())a.push(Math.round(c.cost*100)/100)});if(T.showShip)a.push(r.ship);return a})];
 }
 
-/* ---------- TAB: วัสดุ/ต้นทุน ---------- */
+/* ---------- TAB: วัสดุและสต๊อก ---------- */
 function renderItems(){
-  const cat=S.itemCat,list=S.items.filter(i=>i.cat===cat);
-  $('#tab-items').innerHTML=`<section class="card"><h2>วัสดุและต้นทุน <small>แก้ไขได้ทุกช่อง ระบบบันทึกโดยอัตโนมัติ</small></h2>
+  const v=S.itemView,low=S.items.filter(isLow).length,tab=(k,t)=>`<button class="${v===k?'on':''}" onclick="A.itemView('${k}')">${t}</button>`;
+  $('#tab-items').innerHTML=`<div class="seg wide">${tab('stock','สต๊อก'+(low?` <i>${low}</i>`:''))}${tab('buy','บันทึกการสั่งซื้อ')}${tab('list','วัสดุและราคา')}</div>`+({stock:stockView,buy:buyView,list:listView})[v]();
+  if(v==='list')S.items.filter(i=>i.cat===S.itemCat).forEach(itemInfo);
+  if(v==='buy')updBuy();
+}
+function stockView(){
+  const all=S.items.filter(stockable),low=all.filter(isLow).length,rows=S.stockLow?all.filter(isLow):all;
+  const row=it=>{const u=bUnit(it),t=tracked(it),pq=num(it.pqty);
+    return `<tr class="${isLow(it)?'low':''}"><td><b>${esc(it.name||'(ยังไม่ได้ตั้งชื่อ)')}</b><small>${esc(CAT[it.cat].name)}</small></td>
+      <td class="n">${t?`<b>${fmtQ(it.stock)}</b> ${u}${pq>0&&it.punit?`<small>ประมาณ ${fmtQ(num(it.stock)/pq)} ${esc(it.punit)}</small>`:''}`:'<span class="mute">ยังไม่ได้ตั้งยอด</span>'}</td>
+      <td class="n re">${t?`<span class="lbl">จุดสั่งซื้อ </span>${fmtQ(num(it.reorder))} ${u}`:''}${isLow(it)?'<small class="warn">ควรสั่งซื้อ</small>':''}</td>
+      <td class="a"><button class="link" onclick="A.buyFor('${it.id}')">รับเข้า</button><button class="link" onclick="A.adjust('${it.id}')">${t?'ปรับยอด':'ตั้งยอด'}</button></td></tr>`};
+  return `<section class="card"><h2>สต๊อกวัสดุ <small>${low?`ควรสั่งซื้อ ${low} รายการ`:'ไม่มีรายการที่ต้องสั่งซื้อ'}</small></h2>
+    <label class="chk" style="margin-bottom:10px"><input type="checkbox"${S.stockLow?' checked':''} onchange="A.stockLow(this.checked)"> แสดงเฉพาะรายการที่ควรสั่งซื้อ</label>
+    <div class="tw"><table class="st"><thead><tr><th>วัสดุ</th><th class="n">คงเหลือ</th><th class="n">จุดสั่งซื้อ</th><th></th></tr></thead><tbody>${rows.map(row).join('')||'<tr><td colspan="4" class="empty">ไม่มีรายการ</td></tr>'}</tbody></table></div>
+    <p class="hint">ยอดคงเหลือเพิ่มเมื่อบันทึกการสั่งซื้อ และลดเมื่อกด “ลูกค้ายืนยันสั่งทำ” ในใบเสนอราคา · วัสดุที่ยังไม่ได้ตั้งยอดจะไม่ถูกตัดสต๊อก</p></section>
+  <section class="card"><h2>ความเคลื่อนไหวล่าสุด</h2>${S.moves.slice(0,40).map(m=>`<div class="mv"><span><b>${esc(m.itemName)}</b><small>${fmtTs(m.ts)} · ${esc(m.reason)}${m.ref?' · '+esc(m.ref):''}${m.by?' · '+esc(m.by):''}</small></span><span class="n ${num(m.delta)<0?'neg':'pos'}">${num(m.delta)>0?'+':''}${fmtQ(m.delta)} ${esc(m.unit||'')}<small>คงเหลือ ${fmtQ(m.balance)}</small></span></div>`).join('')||'<div class="empty">ยังไม่มีความเคลื่อนไหว</div>'}</section>`;
+}
+function defPU(it){ // หน่วยซื้อเริ่มต้นของวัสดุ
+  if(!it)return {punit:'',pqty:''};
+  if(it.punit||num(it.pqty))return {punit:it.punit||'',pqty:it.pqty||''};
+  const k=(BASES[it.basis]||{}).kind;return k==='len'?{punit:'เส้น',pqty:''}:k==='area'?{punit:'แผ่น',pqty:''}:{punit:bUnit(it),pqty:1};
+}
+function buyView(){
+  const b=S.buy,opts=sel=>'<option value="">— เลือกวัสดุ —</option>'+CATS.map(c=>{const l=S.items.filter(i=>i.cat===c.id&&stockable(i));return l.length?`<optgroup label="${esc(c.name)}">${l.map(i=>`<option value="${i.id}"${i.id===sel?' selected':''}>${esc(i.name||'(ยังไม่ได้ตั้งชื่อ)')}</option>`).join('')}</optgroup>`:''}).join('');
+  return `<section class="card"><h2>บันทึกการสั่งซื้อ <small>กรอกตามใบสั่งซื้อหรือใบส่งของ</small></h2>
+    <div class="grid c4">
+      <label class="f">วันที่<input type="date" value="${esc(b.date)}" oninput="A.buyHead('date',this.value)"></label>
+      <label class="f">ผู้ขาย<input type="text" value="${esc(b.supplier)}" oninput="A.buyHead('supplier',this.value)"></label>
+      <label class="f wide">เลขที่เอกสาร (ไม่บังคับ)<input type="text" value="${esc(b.doc)}" oninput="A.buyHead('doc',this.value)"></label>
+    </div></section>
+  ${b.lines.map((l,i)=>{const it=itemById(l.itemId),u=it?bUnit(it):'หน่วยใช้งาน';return `<div class="bl"><div class="grid c4">
+      <label class="f wide">รายการที่ ${i+1} — วัสดุ<select onchange="A.buySet('${l.id}','itemId',this.value,1)">${opts(l.itemId)}</select></label>
+      <label class="f">จำนวนที่ซื้อ<input type="number" inputmode="decimal" min="0" step="any" value="${esc(l.qty)}" oninput="A.buySet('${l.id}','qty',this.value)"></label>
+      <label class="f">หน่วยซื้อ<input type="text" value="${esc(l.punit)}" placeholder="เช่น เส้น กล่อง แผ่น" oninput="A.buySet('${l.id}','punit',this.value)"></label>
+      <label class="f">1 หน่วยซื้อ เท่ากับ (${u})<input type="number" inputmode="decimal" min="0" step="any" value="${esc(l.pqty)}" placeholder="เช่น 10" oninput="A.buySet('${l.id}','pqty',this.value)"></label>
+      <label class="f">ราคาต่อหน่วยซื้อ (บาท)<input type="number" inputmode="decimal" min="0" step="any" value="${esc(l.unitPrice)}" oninput="A.buySet('${l.id}','unitPrice',this.value)"></label>
+      <label class="f">ส่วนลด (%)<input type="number" inputmode="decimal" min="0" step="any" value="${esc(l.disc)}" placeholder="0" oninput="A.buySet('${l.id}','disc',this.value)"></label>
+    </div><div class="inf" data-bi="${l.id}"></div>
+    ${b.lines.length>1?`<div class="qacts"><button class="link bad" onclick="A.buyDel('${l.id}')">ลบรายการนี้</button></div>`:''}</div>`}).join('')}
+  <section class="card">
+    <div class="addrow" style="margin-top:0"><button class="btn o sm" onclick="A.buyAdd()">＋ เพิ่มรายการในเอกสารนี้</button></div>
+    <label class="chk" style="margin:12px 0"><input type="checkbox"${b.vat?' checked':''} onchange="A.buyHead('vat',this.checked)"> ผู้ขายคิดภาษีมูลค่าเพิ่ม ${num(S.cfg.vatRate)}% เพิ่มจากราคานี้ และให้รวมภาษีเข้าในต้นทุนวัสดุ</label>
+    <div id="buySum"></div>
+    <button class="btn block" style="margin-top:12px" onclick="A.buySave()">บันทึกการสั่งซื้อ</button>
+    <p class="hint">เมื่อบันทึก ระบบจะปรับต้นทุนวัสดุเป็นราคาซื้อล่าสุด (หลังหักส่วนลด) และเพิ่มยอดคงเหลือในสต๊อกทันที · หากยังไม่มีวัสดุในรายการ ให้เพิ่มที่ “วัสดุและราคา” ก่อน</p>
+  </section>
+  <section class="card"><h2>ประวัติการสั่งซื้อ</h2>${S.purchases.slice(0,40).map(p=>`<div class="mv"><span><b>${esc(p.itemName)}</b><small>${thDate(toDate(p.date))}${p.supplier?' · '+esc(p.supplier):''}${p.doc?' · '+esc(p.doc):''}${p.by?' · '+esc(p.by):''}</small></span><span class="n">${fmtQ(p.qty)} ${esc(p.punit||'')} × ${fmt(p.unitPrice,2)}${num(p.disc)?` (ลด ${fmtQ(p.disc)}%)`:''}<small>฿${fmt(p.total,2)}</small></span></div>`).join('')||'<div class="empty">ยังไม่มีประวัติการสั่งซื้อ</div>'}</section>`;
+}
+function buyCalc(l){
+  const it=itemById(l.itemId),conv=num(l.pqty),qty=num(l.qty),net=num(l.unitPrice)*(1-num(l.disc)/100),vat=S.buy.vat?num(S.cfg.vatRate):0;
+  return {it,conv,amount:qty*net,add:qty*conv,cost:conv>0?net*(1+vat/100)/conv:0};
+}
+function updBuy(){
+  let sum=0;
+  S.buy.lines.forEach(l=>{const c=buyCalc(l),e=$(`[data-bi="${l.id}"]`);sum+=c.amount;if(!e)return;
+    if(!c.it){e.textContent='';return}
+    const u=bUnit(c.it);
+    if(!(c.conv>0)){e.className='inf warn';e.textContent=`กรุณาระบุว่า 1 ${l.punit||'หน่วยซื้อ'} เท่ากับกี่${u}`;return}
+    const p=unitPrice({...c.it,cost:c.cost});
+    e.className='inf';
+    e.textContent=`จำนวนเงิน ${fmt(c.amount,2)} บาท · รับเข้าสต๊อก ${fmtQ(c.add)} ${u}`+(c.cost>0?` · ต้นทุนใหม่ ${fmt(c.cost,2)} บาท/${u}${num(c.it.cost)?` (เดิม ${fmt(num(c.it.cost),2)})`:''} · อัตรากำไร ${p?fmt((p-c.cost)/p*100):0}%`:'')});
+  const t=$('#buySum');if(!t)return;
+  const vat=S.buy.vat?sum*num(S.cfg.vatRate)/100:0;
+  t.innerHTML=`<div class="ln"><span>รวมเป็นเงิน</span><span>฿${fmt(sum,2)}</span></div>${vat?`<div class="ln"><span>ภาษีมูลค่าเพิ่ม ${num(S.cfg.vatRate)}%</span><span>฿${fmt(vat,2)}</span></div>`:''}<div class="ln tot"><span>ยอดสุทธิ</span><span>฿${fmt(sum+vat,2)}</span></div>`;
+}
+function listView(){
+  const cat=S.itemCat,list=S.items.filter(i=>i.cat===cat),st=isStaff(),ro=st?' disabled':'';
+  return `<section class="card"><h2>วัสดุและราคา <small>แก้ไขได้ทุกช่อง ระบบบันทึกโดยอัตโนมัติ</small></h2>
     <div class="chips">${CATS.map(c=>`<button class="chip sm${c.id===cat?' on':''}" onclick="A.itemCat('${c.id}')">${c.name} (${S.items.filter(i=>i.cat===c.id).length})</button>`).join('')}</div>
-    <p class="hint">ราคาเริ่มต้นเป็นเพียงตัวอย่าง กรุณาปรับเป็นราคาจริงของร้าน · หากเว้นช่อง “ราคาขาย” ว่างไว้ ระบบจะคำนวณจากต้นทุนบวกกำไร ${num(S.cfg.markup)}% โดยอัตโนมัติ</p></section>
-  ${list.map(it=>{const B=BASES[it.basis]||BASES.job;return `<div class="item">
-    <div class="row1"><input type="text" aria-label="ชื่อวัสดุ" value="${esc(it.name)}" placeholder="ชื่อวัสดุ / บริการ" oninput="A.itemSet('${it.id}','name',this.value)"><button class="x" title="ลบ" aria-label="ลบ" onclick="A.itemDel('${it.id}')">×</button></div>
+    <p class="hint">${st?'พนักงานแก้ไขต้นทุนและข้อมูลวัสดุได้ ส่วนราคาขายและราคาขั้นต่ำกำหนดโดยเจ้าของร้าน':`ราคาเริ่มต้นเป็นเพียงตัวอย่าง กรุณาปรับเป็นราคาจริงของร้าน · หากเว้นช่อง “ราคาขาย” ว่างไว้ ระบบจะคำนวณจากต้นทุนบวกกำไร ${num(S.cfg.markup)}% โดยอัตโนมัติ`}</p></section>
+  ${list.map(it=>{const B=BASES[it.basis]||BASES.job,nf=(f,label,ph='',dis='')=>`<label class="f">${label}<input type="number" inputmode="decimal" min="0" step="any" value="${esc(it[f])}" placeholder="${ph}"${dis} oninput="A.itemSet('${it.id}','${f}',this.value)"></label>`;
+    return `<div class="item">
+    <div class="row1"><input type="text" aria-label="ชื่อวัสดุ" value="${esc(it.name)}" placeholder="ชื่อวัสดุ / บริการ" oninput="A.itemSet('${it.id}','name',this.value)">${st?'':`<button class="x" title="ลบ" aria-label="ลบ" onclick="A.itemDel('${it.id}')">×</button>`}</div>
     <div class="g">
       <label class="f">หน่วยคำนวณราคา<select onchange="A.itemSet('${it.id}','basis',this.value,1)">${Object.entries(BASES).map(([k,b])=>`<option value="${k}"${it.basis===k?' selected':''}>${b.label}</option>`).join('')}</select></label>
-      <label class="f">ต้นทุน (บาท/${B.u})<input type="number" inputmode="decimal" min="0" step="any" value="${esc(it.cost)}" oninput="A.itemSet('${it.id}','cost',this.value)"></label>
-      <label class="f">ราคาขาย (บาท/${B.u})<input type="number" inputmode="decimal" min="0" step="any" value="${esc(it.price)}" placeholder="อัตโนมัติ" oninput="A.itemSet('${it.id}','price',this.value)"></label>
-      ${it.cat==='frame'?`<label class="f">หน้ากว้างคิ้ว (นิ้ว)<input type="number" inputmode="decimal" min="0" step="any" value="${esc(it.face)}" oninput="A.itemSet('${it.id}','face',this.value)"></label>`:''}
-      ${B.kind==='piece'?`<label class="f">จำนวนเริ่มต้น<input type="number" inputmode="decimal" min="0" step="any" value="${esc(it.dq)}" placeholder="1" oninput="A.itemSet('${it.id}','dq',this.value)"></label>`:''}
-      ${B.kind!=='piece'&&B.kind!=='job'?`<label class="f">ส่วนเผื่อสูญเสีย (%)<input type="number" inputmode="decimal" min="0" step="any" value="${esc(it.waste)}" placeholder="0" oninput="A.itemSet('${it.id}','waste',this.value)"></label>`:''}
-      <label class="f">ราคาขั้นต่ำ (บาท)<input type="number" inputmode="decimal" min="0" step="any" value="${esc(it.min)}" placeholder="ไม่มี" oninput="A.itemSet('${it.id}','min',this.value)"></label>
+      ${nf('cost',`ต้นทุน (บาท/${B.u})`)}
+      ${nf('price',`ราคาขาย (บาท/${B.u})`,'อัตโนมัติ',ro)}
+      ${it.cat==='frame'?nf('face','หน้ากว้างคิ้ว (นิ้ว)'):''}
+      ${B.kind==='piece'?nf('dq','จำนวนที่ใช้ต่องาน','1'):''}
+      ${B.kind!=='piece'&&B.kind!=='job'?nf('waste','ส่วนเผื่อสูญเสีย (%)','0'):''}
+      ${nf('min','ราคาขั้นต่ำ (บาท)','ไม่มี',ro)}
+      ${stockable(it)?`<label class="f">หน่วยซื้อ<input type="text" value="${esc(it.punit)}" placeholder="เช่น เส้น แผ่น" oninput="A.itemSet('${it.id}','punit',this.value)"></label>${nf('pqty',`1 หน่วยซื้อ เท่ากับ (${B.u})`)}${nf('reorder',`จุดสั่งซื้อ (${B.u})`,'0')}`:''}
     </div><div class="inf" data-inf="${it.id}"></div></div>`}).join('')||'<div class="empty">หมวดนี้ยังไม่มีรายการ</div>'}
-  <div class="toolbar"><button class="btn" onclick="A.itemAdd()">＋ เพิ่มรายการ</button><button class="btn o" onclick="A.bulk()">ปรับราคาขายทั้งหมวด (± %)</button></div>`;
-  list.forEach(itemInfo);
+  <div class="toolbar"><button class="btn" onclick="A.itemAdd()">＋ เพิ่มรายการ</button>${st?'':'<button class="btn o" onclick="A.bulk()">ปรับราคาขายทั้งหมวด (± %)</button>'}</div>`;
 }
-function itemInfo(it){const e=$(`[data-inf="${it.id}"]`);if(!e)return;const p=unitPrice(it),c=num(it.cost),u=(BASES[it.basis]||BASES.job).u;
-  e.textContent=`ราคาขายที่ใช้คำนวณ ${fmtP(p)} บาท/${u} · กำไร ${fmtP(p-c)} บาท (${p?fmt((p-c)/p*100):0}%)${it.cat==='frame'?' · ความยาวคิ้ว = เส้นรอบรูป + 8 × หน้ากว้าง (ส่วนเผื่อเข้ามุม)':''}`}
+function itemInfo(it){const e=$(`[data-inf="${it.id}"]`);if(!e)return;const p=unitPrice(it),c=num(it.cost),u=bUnit(it);
+  e.className='inf'+(c>0&&p<=c?' warn':'');
+  e.textContent=`ราคาขายที่ใช้คำนวณ ${fmtP(p)} บาท/${u} · กำไร ${fmtP(p-c)} บาท (${p?fmt((p-c)/p*100):0}%)${c>0&&p<=c?' — ราคาขายไม่สูงกว่าต้นทุน':''}${it.cat==='frame'?' · ความยาวคิ้ว = เส้นรอบรูป + 8 × หน้ากว้าง (ส่วนเผื่อเข้ามุม)':''}`}
+
+/* ---------- การเคลื่อนไหวของสต๊อก (ทำในเครื่องทันที แล้วส่งขึ้นระบบกลาง) ---------- */
+function logMove(it,delta,reason,ref){S.moves.unshift({ts:new Date().toISOString(),itemId:it.id,itemName:it.name,delta:r3(delta),unit:bUnit(it),reason,ref:ref||'',by:who(),balance:it.stock});if(S.moves.length>200)S.moves.length=200}
+function applyPurchase(p){
+  const it=itemById(p.itemId);if(!it)return;
+  it.punit=p.punit||'';if(num(p.pqty)>0)it.pqty=num(p.pqty);
+  const conv=num(it.pqty)||1,qty=num(p.qty),net=num(p.unitPrice)*(1-num(p.disc)/100),add=r3(qty*conv);
+  if(net>0)it.cost=Math.round(net*(1+num(p.vat)/100)/conv*1e4)/1e4; // ต้นทุน = ราคาซื้อล่าสุด หลังหักส่วนลด
+  it.stock=r3((num(it.stock)||0)+add);
+  S.purchases.unshift({...p,itemName:it.name,total:Math.round(qty*net*100)/100,cost:it.cost,by:who(),ts:new Date().toISOString()});if(S.purchases.length>200)S.purchases.length=200;
+  logMove(it,add,'ซื้อเข้า',[p.supplier,p.doc].filter(Boolean).join(' '));
+}
+function applyUses(uses,sign,ref){(uses||[]).forEach(u=>{const it=itemById(u.itemId),d=r3(sign*num(u.qty));if(!tracked(it)||!d)return;it.stock=r3(num(it.stock)+d);logMove(it,d,d<0?'ตัดตามงาน':'คืนสต๊อก',ref)})}
+function usesDiff(a,b){ // ส่วนต่างปริมาณวัสดุ (b − a) ใช้เมื่อแก้ไขงานที่ตัดสต๊อกไปแล้ว
+  const m={};(a||[]).forEach(u=>m[u.itemId]=(m[u.itemId]||0)-num(u.qty));(b||[]).forEach(u=>m[u.itemId]=(m[u.itemId]||0)+num(u.qty));
+  return Object.entries(m).filter(([,q])=>Math.abs(q)>0.0005).map(([itemId,qty])=>({itemId,qty:r3(qty)}));
+}
 
 /* ---------- TAB: ตั้งค่า ---------- */
 function renderSettings(){
   const s=S.shop,c=S.cfg;
-  $('#tab-settings').innerHTML=`<div class="half"><div>
+  if(isStaff()){$('#tab-settings').innerHTML=cloudCard()+'<p class="hint">ข้อมูลร้านและการคำนวณราคากำหนดโดยเจ้าของร้าน</p>';return}
+  $('#tab-settings').innerHTML=`${cloudCard()}<div class="half"><div>
   <section class="card"><h2>ข้อมูลร้าน <small>แสดงในส่วนหัวเอกสาร</small></h2><div class="grid">
     <label class="f wide">ชื่อร้าน<input type="text" value="${esc(s.name)}" oninput="A.shopSet('name',this.value)"></label>
     <label class="f wide">ที่อยู่<textarea oninput="A.shopSet('addr',this.value)">${esc(s.addr)}</textarea></label>
@@ -688,9 +878,120 @@ function renderSettings(){
     <label class="f wide">อัตราค่าจัดส่งตามขนาด — “กว้าง + สูง ไม่เกิน (นิ้ว) = ค่าจัดส่ง (บาท)” บรรทัดละ 1 ช่วง<textarea style="min-height:120px" oninput="A.cfgSet('ship',this.value)">${esc(c.ship)}</textarea></label>
   </div></section>
   <section class="card"><h2>สำรองและย้ายข้อมูล</h2>
-    <p class="hint" style="margin-top:0">ข้อมูลทั้งหมดจัดเก็บในอุปกรณ์เครื่องนี้เท่านั้น ควรสำรองข้อมูลเป็นระยะ และสามารถใช้ไฟล์สำรองเพื่อย้ายข้อมูลไปยังอุปกรณ์อื่นได้</p>
-    <div class="toolbar" style="margin:10px 0 0"><button class="btn" onclick="A.exportData()">ดาวน์โหลดไฟล์สำรอง</button><label class="btn o" style="display:inline-flex;align-items:center">นำเข้าไฟล์สำรอง<input type="file" accept=".json,application/json" hidden onchange="A.importData(this.files[0]);this.value=''"></label><button class="btn danger" onclick="A.resetAll()">ล้างข้อมูลทั้งหมด</button></div>
+    <p class="hint" style="margin-top:0">${cloudOn()?'ข้อมูลหลักจัดเก็บใน Google Sheets ของร้านแล้ว ไฟล์สำรองนี้ใช้เก็บสำเนาเพิ่มเติมไว้ในอุปกรณ์':'ข้อมูลทั้งหมดจัดเก็บในอุปกรณ์เครื่องนี้เท่านั้น ควรสำรองข้อมูลเป็นระยะ และสามารถใช้ไฟล์สำรองเพื่อย้ายข้อมูลไปยังอุปกรณ์อื่นได้'}</p>
+    <div class="toolbar" style="margin:10px 0 0"><button class="btn" onclick="A.exportData()">ดาวน์โหลดไฟล์สำรอง</button>${cloudOn()?'':`<label class="btn o" style="display:inline-flex;align-items:center">นำเข้าไฟล์สำรอง<input type="file" accept=".json,application/json" hidden onchange="A.importData(this.files[0]);this.value=''"></label>`}<button class="btn danger" onclick="A.resetAll()">${cloudOn()?'ล้างข้อมูลในอุปกรณ์นี้':'ล้างข้อมูลทั้งหมด'}</button></div>
   </section></div></div>`;
+}
+
+/* ---------- ข้อมูลกลางของร้าน (Google Sheets ผ่าน Apps Script) ---------- */
+const scriptUrl=v=>{v=String(v||'').trim();return /^https?:\/\//.test(v)?v:v?`https://script.google.com/macros/s/${v}/exec`:''};
+const hashShop=()=>{const m=location.hash.match(/[#&]s=([^&]+)/);return m?decodeURIComponent(m[1]):''};
+function api(action,data,extra,c){c=c||S.cloud;return fetch(c.url,{method:'POST',body:JSON.stringify({pin:c.pin,action,data,...extra})}).then(r=>r.json())}
+function cloudCard(){
+  const c=S.cloud;
+  if(!cloudOn())return `<section class="card"><h2>เชื่อมต่อข้อมูลกลางของร้าน <small>Google Sheets</small></h2>
+    <p class="hint" style="margin-top:0">เมื่อเชื่อมต่อแล้ว ข้อมูลวัสดุ ราคา สต๊อก การสั่งซื้อ และใบเสนอราคา จะจัดเก็บใน Google Sheets ของร้าน และใช้ร่วมกันได้ทุกอุปกรณ์</p>
+    <div class="grid"><label class="f wide">ที่อยู่ระบบของร้าน (Web app URL จาก Apps Script)<input id="cUrl" type="text" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(scriptUrl(hashShop()))}"></label>
+    <label class="f">รหัสร้าน<input id="cPin2" type="password" autocomplete="off"></label></div>
+    <div class="toolbar" style="margin:12px 0 0"><button class="btn" onclick="A.connectForm()">เชื่อมต่อ</button></div></section>`;
+  const n=S.queue.length;
+  return `<section class="card"><h2>ข้อมูลกลางของร้าน <small>เชื่อมต่อกับ Google Sheets แล้ว</small></h2>
+    <div class="ln"><span>สิทธิ์การใช้งาน</span><b>${who()}</b></div>
+    <div class="ln"><span>ซิงก์ล่าสุด</span><span>${c.last?fmtTs(c.last):'—'}</span></div>
+    ${n?`<div class="ln"><span>รายการที่รอส่ง</span><span>${n} รายการ</span></div>`:''}
+    ${c.err==='net'?'<p class="hint" style="color:var(--bad)">ขณะนี้เชื่อมต่อไม่ได้ รายการที่บันทึกไว้จะส่งขึ้นระบบเมื่ออินเทอร์เน็ตกลับมา</p>':''}
+    <div class="toolbar" style="margin:12px 0 0"><button class="btn" onclick="A.syncNow()">ซิงก์ข้อมูลตอนนี้</button>${isStaff()?'':'<button class="btn o" onclick="A.copyStaffLink()">คัดลอกลิงก์สำหรับพนักงาน</button>'}<button class="btn danger" onclick="A.disconnect()">ยกเลิกการเชื่อมต่อ</button></div></section>`;
+}
+function connectDialog(msg){
+  const d=$('#dlg');
+  d.innerHTML=`<div class="dlg-h"><b>เข้าใช้งานระบบของร้าน</b><button class="x" aria-label="ปิด" onclick="document.getElementById('dlg').close()">×</button></div><div class="dlg-b">
+    ${msg?`<p class="hint" style="margin-top:0;color:var(--bad)">${esc(msg)}</p>`:'<p class="hint" style="margin-top:0">กรุณาใส่รหัสร้านที่ได้รับจากเจ้าของร้าน</p>'}
+    <label class="f">รหัสร้าน<input id="cPin" type="password" autocomplete="off" onkeydown="if(event.key==='Enter')A.connectGo()"></label>
+    <div class="toolbar" style="margin:14px 0 0"><button class="btn" onclick="A.connectGo()">เข้าใช้งาน</button></div></div>`;
+  if(!d.open)d.showModal();
+}
+async function connect(url,pin){
+  url=scriptUrl(url);pin=String(pin||'').trim();
+  if(!url||!pin){toast('กรุณากรอกที่อยู่ระบบและรหัสร้านให้ครบ');return false}
+  let r;try{r=await api('login',null,null,{url,pin})}catch(e){toast('เชื่อมต่อไม่สำเร็จ กรุณาตรวจสอบที่อยู่ระบบและอินเทอร์เน็ต');return false}
+  if(!r.ok){toast(r.error==='PIN'?'รหัสร้านไม่ถูกต้อง':'เชื่อมต่อไม่สำเร็จ: '+r.error);return false}
+  const same=S.cloud&&S.cloud.url===url;
+  S.cloud={url,pin,role:r.role,err:'',last:0};
+  if(!same){S.queue=[];S.dirtyItems={};S.dirtySet=false}
+  if(r.state.empty&&r.role==='owner'){ // ชีตยังว่าง: ส่งข้อมูลในอุปกรณ์นี้ขึ้นไปเป็นข้อมูลตั้งต้น
+    push('init',{items:S.items,settings:{shop:S.shop,cfg:S.cfg,templates:S.templates,sizes:S.sizes},quotes:S.quotes.map(q=>({quote:cleanQuote(q),meta:quoteMeta(q)}))});
+    toast('เชื่อมต่อแล้ว กำลังส่งข้อมูลในอุปกรณ์นี้ขึ้นระบบกลาง');
+  }else{
+    if(S.queue.length)flush();else applyState(r.state);
+    toast(r.state.empty?'เชื่อมต่อแล้ว แต่ระบบกลางยังไม่มีข้อมูล กรุณาให้เจ้าของร้านเชื่อมต่อก่อน':'เชื่อมต่อเรียบร้อยแล้ว (สิทธิ์'+who()+')');
+  }
+  save();render();return true;
+}
+let dirtyT=null,retryT=null,flushing=false;
+function markItem(id){if(!cloudOn())return;S.dirtyItems[id]=1;clearTimeout(dirtyT);dirtyT=setTimeout(()=>{flushDirty();save();flush()},1500);syncUI()}
+function markSettings(){if(!cloudOn()||isStaff())return;S.dirtySet=true;clearTimeout(dirtyT);dirtyT=setTimeout(()=>{flushDirty();save();flush()},1500);syncUI()}
+function flushDirty(){ // รวมการแก้ไขวัสดุ/ตั้งค่าที่ค้างอยู่เข้าคิวส่ง
+  clearTimeout(dirtyT);
+  const ids=Object.keys(S.dirtyItems);
+  if(ids.length){S.queue.push({opId:uid()+uid(),action:'saveItems',data:{items:ids.map(itemById).filter(Boolean).map(clone)}});S.dirtyItems={}}
+  if(S.dirtySet){S.queue.push({opId:uid()+uid(),action:'saveSettings',data:{settings:{shop:S.shop,cfg:S.cfg,templates:S.templates,sizes:S.sizes}}});S.dirtySet=false}
+}
+function push(action,data){if(!cloudOn())return;flushDirty();S.queue.push({opId:uid()+uid(),action,data});save();flush()}
+async function flush(){ // ส่งคิวทีละรายการตามลำดับ ถ้าเน็ตหลุดจะเก็บไว้ส่งใหม่
+  if(flushing||!cloudOn())return;flushing=true;syncUI();let repull=false;
+  try{
+    while(cloudOn()&&S.queue.length){
+      const op=S.queue[0],res=await api(op.action,op.data,{opId:op.opId,wantState:S.queue.length===1});
+      if(!cloudOn())break;
+      if(!res.ok&&res.error==='PIN'){S.cloud.err='pin';break}
+      S.queue.shift();S.cloud.err='';
+      if(!res.ok){toast('ระบบกลางไม่รับรายการนี้: '+res.error);repull=true}
+      else{if(op.action==='saveQuote'&&res.no)fixNo(res.id,res.no);if(res.state&&!S.queue.length&&!repull)applyState(res.state)}
+      save();
+    }
+  }catch(e){if(cloudOn()){S.cloud.err='net';clearTimeout(retryT);retryT=setTimeout(()=>flush(),20000)}}
+  flushing=false;save();syncUI();
+  if(!cloudOn())return;
+  if(S.cloud.err==='pin')connectDialog('รหัสร้านไม่ถูกต้องหรือถูกเปลี่ยน กรุณาใส่รหัสใหม่');
+  else if(repull&&!S.cloud.err)pull();
+}
+async function pull(){ // ดึงข้อมูลล่าสุดจากระบบกลาง (ถ้ามีรายการค้างส่ง จะส่งก่อน)
+  if(!cloudOn()||flushing)return;
+  if(S.queue.length||Object.keys(S.dirtyItems).length||S.dirtySet){flushDirty();save();return flush()}
+  try{
+    const r=await api('pull');if(!cloudOn())return;
+    if(r.ok){S.cloud.err='';S.cloud.role=r.role;applyState(r.state)}
+    else if(r.error==='PIN'){S.cloud.err='pin';connectDialog('รหัสร้านไม่ถูกต้องหรือถูกเปลี่ยน กรุณาใส่รหัสใหม่')}
+  }catch(e){if(cloudOn())S.cloud.err='net'}
+  save();syncUI();
+}
+function applyState(st){ // แทนที่ข้อมูลในเครื่องด้วยข้อมูลจากระบบกลาง
+  if(!st||S.queue.length||Object.keys(S.dirtyItems).length||S.dirtySet)return; // ยังมีรายการที่ไม่ได้ส่ง รอรอบถัดไป
+  S.cloud.last=Date.now();
+  if(st.empty){save();syncUI();return}
+  S.items=st.items.map(i=>({...I(i.id,i.cat,i.name,i.basis,i.cost,i.price),...i}));
+  const g=st.settings||{};
+  if(g.shop)S.shop={...S.shop,...g.shop};if(g.cfg)S.cfg={...S.cfg,...g.cfg};if(g.templates)S.templates=g.templates;if(Array.isArray(g.sizes))S.sizes=g.sizes;
+  S.qlist=st.qlist||[];S.purchases=st.buys||[];S.moves=st.moves||[];
+  const has=id=>!id||S.items.some(i=>i.id===id);
+  [S.calc,S.table.job].forEach(j=>j.rows.forEach(r=>{if(!has(r.item))r.item=null}));S.table.colItems=S.table.colItems.filter(has);
+  const q=S.draft,m=S.qlist.find(x=>x.id===q.id);
+  if(m&&!q.dirty){q.status=m.status;q.no=m.no}
+  if(!q.savedOnce&&!q.lines.length)q.no=genNo();
+  save();renderIfIdle();
+}
+function fixNo(id,no){ // ระบบกลางออกเลขที่ใหม่ให้เมื่อเลขซ้ำกับอีกเครื่อง
+  let changed=false;[S.draft,...S.quotes].forEach(q=>{if(q&&q.id===id&&q.no!==no){q.no=no;changed=true}});
+  const m=S.qlist.find(x=>x.id===id);if(m)m.no=no;
+  if(changed)toast('เลขที่เอกสารซ้ำกับอีกเครื่อง ระบบเปลี่ยนเป็น '+no);
+}
+function renderIfIdle(){const a=document.activeElement;if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.closest('main'))syncUI();else render()}
+function syncUI(){
+  const e=$('#syncPill');if(!e)return;
+  if(!cloudOn()){e.hidden=true;return}
+  const n=S.queue.length+(Object.keys(S.dirtyItems).length?1:0)+(S.dirtySet?1:0),err=S.cloud.err;
+  e.hidden=false;e.className='pill '+(err?'bad':n?'wait':'ok');e.title='สิทธิ์'+who();
+  e.textContent=err==='net'?`ออฟไลน์${n?` · รอส่ง ${n}`:''}`:err==='pin'?'รหัสไม่ถูกต้อง':n?'กำลังบันทึก…':'บันทึกแล้ว';
 }
 
 /* ---------- actions ---------- */
@@ -704,6 +1005,38 @@ function ask(msg,ok,fn,danger){const d=$('#ask');
 const A={
   tab(t){S.tab=t;save();render();window.scrollTo(0,0)},
   toggleCost(){S.hideCost=!S.hideCost;save();render()},
+  itemView(v){S.itemView=v;save();renderItems()},
+  stockLow(b){S.stockLow=b;save();renderItems()},
+  buyFor(id){const d=defPU(itemById(id));S.buy.lines=S.buy.lines.filter(l=>l.itemId);S.buy.lines.push({...newBuyLine(),itemId:id,punit:d.punit,pqty:d.pqty});S.itemView='buy';save();renderItems();window.scrollTo(0,0)},
+  buyHead(f,v){S.buy[f]=v;save();updBuy()},
+  buySet(id,f,v,re){const l=S.buy.lines.find(x=>x.id===id);l[f]=v;if(f==='itemId'){const d=defPU(itemById(v));l.punit=d.punit;l.pqty=d.pqty}save();if(re)renderItems();else updBuy()},
+  buyAdd(){S.buy.lines.push(newBuyLine());save();renderItems()},
+  buyDel(id){S.buy.lines=S.buy.lines.filter(l=>l.id!==id);if(!S.buy.lines.length)S.buy.lines.push(newBuyLine());save();renderItems()},
+  buySave(){const b=S.buy,lines=b.lines.filter(l=>l.itemId||num(l.qty));
+    if(!lines.length){toast('กรุณาเลือกวัสดุและระบุจำนวนที่ซื้อ');return}
+    for(const l of lines){const it=itemById(l.itemId);
+      if(!it){toast('กรุณาเลือกวัสดุให้ครบทุกรายการ');return}
+      if(!(num(l.qty)>0)){toast('กรุณาระบุจำนวนที่ซื้อของ “'+it.name+'”');return}
+      if(!(num(l.pqty)>0)){toast('กรุณาระบุว่า 1 หน่วยซื้อของ “'+it.name+'” เท่ากับกี่'+bUnit(it));return}}
+    const vat=b.vat?num(S.cfg.vatRate):0;
+    lines.forEach(l=>{const p={id:uid()+uid(),date:b.date||todayISO(),supplier:b.supplier,doc:b.doc,itemId:l.itemId,qty:num(l.qty),punit:l.punit,pqty:num(l.pqty),unitPrice:num(l.unitPrice),disc:num(l.disc),vat};applyPurchase(p);push('addPurchase',p)});
+    S.buy=newBuy();save();render();toast(`บันทึกการสั่งซื้อ ${lines.length} รายการเรียบร้อยแล้ว`)},
+  adjust(id){const it=itemById(id),d=$('#dlg'),u=bUnit(it),t=tracked(it);
+    d.innerHTML=`<div class="dlg-h"><b>${t?'ปรับยอดคงเหลือ':'ตั้งยอดคงเหลือ'}</b><button class="x" aria-label="ปิด" onclick="document.getElementById('dlg').close()">×</button></div><div class="dlg-b">
+    <p style="margin-top:0"><b>${esc(it.name)}</b>${t?` · ยอดในระบบ ${fmtQ(it.stock)} ${u}`:''}</p>
+    <div class="grid"><label class="f">ยอดที่นับได้จริง (${u})<input id="adjQty" type="number" inputmode="decimal" step="any" value="${t?esc(it.stock):''}"></label>
+    <label class="f">จุดสั่งซื้อ (${u})<input id="adjRe" type="number" inputmode="decimal" min="0" step="any" value="${esc(it.reorder)}" placeholder="0"></label>
+    <label class="f wide">หมายเหตุ (ไม่บังคับ)<input id="adjNote" type="text" placeholder="เช่น นับสต๊อกประจำเดือน"></label></div>
+    <div class="toolbar" style="margin:14px 0 0"><button class="btn" onclick="A.adjustGo('${id}')">บันทึก</button><button class="btn o" onclick="document.getElementById('dlg').close()">ยกเลิก</button></div></div>`;d.showModal()},
+  adjustGo(id){const it=itemById(id),v=$('#adjQty').value,re=$('#adjRe').value,note=$('#adjNote').value,was=tracked(it);$('#dlg').close();
+    if(String(re)!==String(it.reorder??'')){it.reorder=re;markItem(id)}
+    if(v!==''){const nv=r3(num(v)),delta=r3(nv-(num(it.stock)||0));if(!was||delta!==0){it.stock=nv;logMove(it,delta,'ปรับยอด',note);push('adjustStock',{itemId:id,stock:nv,note})}}
+    save();render();toast('บันทึกยอดคงเหลือเรียบร้อยแล้ว')},
+  connectForm(){connect($('#cUrl').value,$('#cPin2').value)},
+  async connectGo(){const url=(S.cloud&&S.cloud.url)||scriptUrl(hashShop());if(await connect(url,$('#cPin').value)){$('#dlg').close();if(location.hash)history.replaceState(null,'',location.pathname+location.search)}},
+  async syncNow(){await pull();if(cloudOn()){toast(S.cloud.err?'เชื่อมต่อไม่ได้ กรุณาลองใหม่อีกครั้ง':'ซิงก์ข้อมูลเรียบร้อยแล้ว');render()}},
+  copyStaffLink(){const m=S.cloud.url.match(/\/s\/([^/]+)\/exec/);copyText(location.origin+location.pathname+'#s='+encodeURIComponent(m?m[1]:S.cloud.url))},
+  disconnect(){const n=S.queue.length;ask('ต้องการยกเลิกการเชื่อมต่อกับข้อมูลกลางในอุปกรณ์นี้หรือไม่\nข้อมูลใน Google Sheets ของร้านจะไม่ถูกลบ'+(n?`\nมีรายการที่ยังไม่ได้ส่ง ${n} รายการ ซึ่งจะสูญหาย`:''),'ยกเลิกการเชื่อมต่อ',()=>{S.cloud=null;S.queue=[];S.dirtyItems={};S.dirtySet=false;S.qlist=[];save();render();toast('ยกเลิกการเชื่อมต่อแล้ว')},1)},
   setType(ctx,t){const j=J(ctx),n=newJob(t,{w:j.w,h:j.h,unit:j.unit,matB:j.matB});n.id=j.id;n.qty=j.qty;n.note=j.note;
     if(ctx==='calc')S.calc=n;else{S.table.job=n;S.table.colItems=[];S.table.colCat=['frame','bar','coat'].find(c=>n.rows.some(r=>r.cat===c))||''}
     save();rr(ctx)},
@@ -717,7 +1050,7 @@ const A={
   exAdd(ctx){J(ctx).extras.push({id:uid(),name:'',cost:'',price:''});save();rr(ctx)},
   exSet(ctx,id,f,v){J(ctx).extras.find(x=>x.id===id)[f]=v;save();upd(ctx)},
   exDel(ctx,id){const j=J(ctx);j.extras=j.extras.filter(x=>x.id!==id);save();rr(ctx)},
-  saveTpl(ctx){const j=J(ctx);S.templates[j.type]=j.rows.map(r=>[r.cat,r.item,r.n]);save();toast('บันทึกเป็นค่าเริ่มต้นของ “'+JOBS.find(x=>x.id===j.type).name+'” แล้ว')},
+  saveTpl(ctx){const j=J(ctx);S.templates[j.type]=j.rows.map(r=>[r.cat,r.item,r.n]);markSettings();save();toast('บันทึกเป็นค่าเริ่มต้นของ “'+JOBS.find(x=>x.id===j.type).name+'” แล้ว')},
   clearCalc(){S.calc=newJob(S.calc.type,{unit:S.calc.unit});S.editing=null;save();renderCalc()},
   cancelEdit(){S.editing=null;S.calc=newJob(S.calc.type,{unit:S.calc.unit});save();A.tab('quote')},
   addToQuote(){const j=S.calc,c=calcJob(j);
@@ -735,17 +1068,41 @@ const A={
   lineEdit(id){const l=S.draft.lines.find(x=>x.id===id);S.calc=clone(l.job);S.calc.qty=l.qty;S.editing=id;save();A.tab('calc')},
   freeAdd(name){S.draft.lines.push({id:uid(),kind:'free',title:name||'',detail:'',unit:'',cost:0,qty:1});touch();render()},
   newQuote(force){const q=S.draft;if(force!==true&&q.dirty&&q.lines.length)return ask('เอกสารปัจจุบันยังไม่ได้บันทึก ต้องการสร้างเอกสารใหม่โดยไม่บันทึกหรือไม่','สร้างเอกสารใหม่',()=>A.newQuote(true));S.draft=newDraft();S.editing=null;save();render()},
-  saveQuote(){const q=S.draft;q.dirty=false;if(!q.savedOnce){q.savedOnce=true;S.cfg.nextNo=num(S.cfg.nextNo)+1}q.updated=Date.now();
-    const i=S.quotes.findIndex(x=>x.id===q.id);if(i>=0)S.quotes[i]=clone(q);else S.quotes.unshift(clone(q));save();render();toast('บันทึกเอกสารเลขที่ '+q.no+' เรียบร้อยแล้ว')},
-  showList(){const d=$('#dlg');d.innerHTML=`<div class="dlg-h"><b>เอกสารที่บันทึกไว้</b><button class="x" aria-label="ปิด" onclick="document.getElementById('dlg').close()">×</button></div><div class="dlg-b">
-    ${S.quotes.map(q=>`<div class="sq"><div style="display:flex;justify-content:space-between;gap:10px"><span><b>${esc(q.no)}</b> · ${esc((DOCS[q.docType]||DOCS.quote)[0])}</span><b>฿${fmt(quoteTotals(q).total,2)}</b></div>
-      <div class="mute" style="font-size:13.5px">${esc(q.cust.name||'ไม่ระบุชื่อลูกค้า')} · ${thDate(toDate(q.date))} · ${q.lines.length} รายการ</div>
-      <div class="qacts"><button class="link" onclick="A.openQuote('${q.id}')">เปิด</button><button class="link" onclick="A.dupQuote('${q.id}')">ทำสำเนาเป็นเอกสารใหม่</button><button class="link bad" onclick="A.delQuote('${q.id}')">ลบ</button></div></div>`).join('')||'<div class="empty">ยังไม่มีเอกสารที่บันทึกไว้</div>'}</div>`;
-    if(!d.open)d.showModal()},
-  openQuote(id,force){const cur=S.draft;if(force!==true&&cur.dirty&&cur.lines.length&&cur.id!==id)return ask('เอกสารปัจจุบันยังไม่ได้บันทึก ต้องการเปิดเอกสารอื่นโดยไม่บันทึกหรือไม่','เปิดเอกสาร',()=>A.openQuote(id,true));
-    S.draft=clone(S.quotes.find(q=>q.id===id));S.editing=null;save();$('#dlg').close();render()},
-  dupQuote(id){const n=clone(S.quotes.find(q=>q.id===id));n.id=uid();n.no=genNo();n.date=todayISO();n.savedOnce=false;n.dirty=true;n.lines.forEach(l=>l.id=uid());S.draft=n;S.editing=null;save();$('#dlg').close();render();toast('ทำสำเนาเป็นเอกสารใหม่แล้ว')},
-  delQuote(id){const q=S.quotes.find(x=>x.id===id);ask(`ต้องการลบเอกสารเลขที่ ${q.no} อย่างถาวรหรือไม่\nเมื่อลบแล้วจะไม่สามารถกู้คืนได้`,'ลบ',()=>{S.quotes=S.quotes.filter(x=>x.id!==id);save();A.showList();render()},1)},
+  saveQuote(silent){const q=S.draft;q.dirty=false;if(!q.savedOnce){q.savedOnce=true;S.cfg.nextNo=num(S.cfg.nextNo)+1}q.updated=Date.now();q.status=q.status||'quote';q.by=q.by||who();
+    let uses; // งานที่ตัดสต๊อกไปแล้วและถูกแก้ไข: ปรับสต๊อกตามส่วนต่าง
+    if(isOn(q.status)){const nu=quoteUses(q).filter(u=>tracked(itemById(u.itemId))),df=usesDiff(q.uses,nu);if(df.length){applyUses(df,-1,q.no);q.uses=nu;uses=nu}}
+    storeQuote(q);push('saveQuote',{quote:cleanQuote(q),meta:quoteMeta(q),uses});save();
+    if(silent!==true){render();toast('บันทึกเอกสารเลขที่ '+q.no+' เรียบร้อยแล้ว')}},
+  setStatus(st,go){const q=S.draft,prev=q.status||'quote';
+    if(!q.lines.length){toast('ยังไม่มีรายการในเอกสาร');return}
+    if(go!==true&&!isOn(prev)&&isOn(st)){
+      const lines=quoteUses(q).map(x=>{const it=itemById(x.itemId);return tracked(it)?`• ${it.name}  −${fmtQ(x.qty)} ${bUnit(it)} (คงเหลือ ${fmtQ(r3(num(it.stock)-x.qty))})`:null}).filter(Boolean);
+      return ask(`ยืนยันว่าลูกค้าสั่งทำตามเอกสารเลขที่ ${q.no}\n`+(lines.length?'ระบบจะตัดสต๊อกวัสดุดังนี้\n'+lines.join('\n'):'ไม่มีวัสดุที่ต้องตัดสต๊อก (วัสดุในงานนี้ยังไม่ได้ตั้งยอดคงเหลือ)'),'ยืนยันสั่งทำ',()=>A.setStatus(st,true))}
+    if(go!==true&&isOn(prev)&&!isOn(st))return ask(`ต้องการ${st==='cancel'?'ยกเลิกงาน':'เปลี่ยนกลับเป็นเสนอราคา'}ตามเอกสารเลขที่ ${q.no} หรือไม่\nระบบจะคืนสต๊อกวัสดุที่ตัดไว้`,st==='cancel'?'ยกเลิกงาน':'ยืนยัน',()=>A.setStatus(st,true),1);
+    if(!q.savedOnce||q.dirty)A.saveQuote(true);
+    let uses=null;
+    if(!isOn(prev)&&isOn(st)){uses=quoteUses(q).filter(u=>tracked(itemById(u.itemId)));applyUses(uses,-1,q.no);q.uses=uses}
+    else if(isOn(prev)&&!isOn(st)){applyUses(q.uses||[],1,q.no);q.uses=null}
+    q.status=st;storeQuote(q);push('setStatus',{id:q.id,status:st,uses});save();render();toast('เปลี่ยนสถานะเป็น “'+STATUS[st]+'” แล้ว')},
+  showList(){const d=$('#dlg');
+    d.innerHTML=`<div class="dlg-h"><b>ประวัติเอกสาร</b><button class="x" aria-label="ปิด" onclick="document.getElementById('dlg').close()">×</button></div><div class="dlg-b">
+    <input type="text" aria-label="ค้นหา" placeholder="ค้นหาเลขที่ ชื่อลูกค้า หรือหมายเลขโทรศัพท์" value="${esc(LQ.q)}" oninput="A.listFilter('q',this.value)">
+    <div class="chips" style="margin:10px 0">${[['','ทั้งหมด'],...Object.entries(STATUS)].map(([k,v])=>`<button class="chip sm${LQ.st===k?' on':''}" data-st="${k}" onclick="A.listFilter('st','${k}')">${v}</button>`).join('')}</div>
+    <div id="lqRows"></div></div>`;
+    listRows();if(!d.open)d.showModal()},
+  listFilter(f,v){LQ[f]=v;if(f==='st')$$('#dlg [data-st]').forEach(b=>b.classList.toggle('on',b.dataset.st===v));listRows()},
+  async openQuote(id,force){const cur=S.draft;if(force!==true&&cur.dirty&&cur.lines.length&&cur.id!==id)return ask('เอกสารปัจจุบันยังไม่ได้บันทึก ต้องการเปิดเอกสารอื่นโดยไม่บันทึกหรือไม่','เปิดเอกสาร',()=>A.openQuote(id,true));
+    const q=await fetchQuote(id);if(!q)return;
+    S.draft=q;S.editing=null;save();$('#dlg').close();S.tab='quote';render()},
+  async dupQuote(id){const n=await fetchQuote(id);if(!n)return;
+    n.id=uid();n.no=genNo();n.date=todayISO();n.savedOnce=false;n.dirty=true;n.status='quote';n.uses=null;n.by='';
+    n.lines.forEach(l=>{l.id=uid();if(l.kind==='job'&&l.job&&l.cost==null)l.cost=Math.round(calcJob(l.job).cost*100)/100});
+    S.draft=n;S.editing=null;save();$('#dlg').close();S.tab='quote';render();toast('ทำสำเนาเป็นเอกสารใหม่แล้ว')},
+  delQuote(id){const m=quoteList().find(x=>x.id===id);if(!m)return;
+    ask(`ต้องการลบเอกสารเลขที่ ${m.no} อย่างถาวรหรือไม่\nเมื่อลบแล้วจะไม่สามารถกู้คืนได้`,'ลบ',()=>{
+      const loc=S.quotes.find(x=>x.id===id);if(loc&&isOn(loc.status))applyUses(loc.uses||[],1,loc.no);
+      S.quotes=S.quotes.filter(x=>x.id!==id);S.qlist=S.qlist.filter(x=>x.id!==id);if(S.draft.id===id)S.draft=newDraft();
+      push('deleteQuote',{id});save();A.showList();render()},1)},
   printQuote(){const q=S.draft;printHTML(docHTML(q),`${(DOCS[q.docType]||DOCS.quote)[0]} ${q.no}${q.cust.name?' - '+q.cust.name:''}`)},
   copyQuote(){copyText(quoteText(S.draft))},
   tblSet(f,v,soft){S.table[f]=v;if(f==='colCat')S.table.colItems=[];save();if(soft&&f==='title')$('#tDoc').innerHTML=tableHTML();else renderTable()},
@@ -755,35 +1112,43 @@ const A={
   csvTable(){const cell=v=>{v=String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};download((S.table.title||'ตารางราคา')+'.csv','﻿'+tableMatrix().map(r=>r.map(cell).join(',')).join('\r\n'),'text/csv;charset=utf-8')},
   copyTable(){copyText(tableMatrix().map(r=>r.join('\t')).join('\n'))},
   itemCat(c){S.itemCat=c;save();renderItems()},
-  itemSet(id,f,v,re){const it=itemById(id);it[f]=v;save();if(re)renderItems();else itemInfo(it)},
-  itemAdd(){const c=CAT[S.itemCat];S.items.push(I('u_'+uid(),c.id,'',c.basis,'','',c.id==='frame'?{face:1}:{}));save();renderItems();const all=$$('#tab-items .item .row1 input');all.length&&all[all.length-1].focus()},
+  itemSet(id,f,v,re){const it=itemById(id);it[f]=v;markItem(id);save();if(re)renderItems();else itemInfo(it)},
+  itemAdd(){const c=CAT[S.itemCat],n=I('u_'+uid(),c.id,'',c.basis,'','',c.id==='frame'?{face:1}:{});S.items.push(n);markItem(n.id);save();renderItems();const all=$$('#tab-items .item .row1 input');all.length&&all[all.length-1].focus()},
   itemDel(id){const it=itemById(id);ask(`ต้องการลบ “${it.name||'รายการนี้'}” ออกจากรายการวัสดุหรือไม่`,'ลบ',()=>{S.items=S.items.filter(i=>i.id!==id);
-    [S.calc,S.table.job].forEach(j=>j.rows.forEach(r=>{if(r.item===id)r.item=null}));S.table.colItems=S.table.colItems.filter(x=>x!==id);save();renderItems()},1)},
+    [S.calc,S.table.job].forEach(j=>j.rows.forEach(r=>{if(r.item===id)r.item=null}));S.table.colItems=S.table.colItems.filter(x=>x!==id);delete S.dirtyItems[id];push('deleteItem',{id});save();renderItems()},1)},
   bulk(){const d=$('#dlg');d.innerHTML=`<div class="dlg-h"><b>ปรับราคาขายทั้งหมวด</b><button class="x" aria-label="ปิด" onclick="document.getElementById('dlg').close()">×</button></div><div class="dlg-b">
     <p style="margin-top:0">ปรับราคาขายของ “${CAT[S.itemCat].name}” ทุกรายการพร้อมกัน</p>
     <label class="f">อัตราการปรับ (%) เช่น 10 = เพิ่มขึ้น 10%, -5 = ลดลง 5%<input id="bulkPct" type="number" step="any" value="10"></label>
     <div class="toolbar" style="margin:14px 0 0"><button class="btn" onclick="A.bulkGo()">ปรับราคา</button><button class="btn o" onclick="document.getElementById('dlg').close()">ยกเลิก</button></div></div>`;d.showModal()},
   bulkGo(){const k=num($('#bulkPct').value);$('#dlg').close();if(!k)return;
-    S.items.filter(i=>i.cat===S.itemCat).forEach(i=>{i.price=Math.round(unitPrice(i)*(1+k/100)*100)/100});save();renderItems();toast(`ปรับราคา ${k>0?'+':''}${k}% เรียบร้อยแล้ว`)},
-  shopSet(f,v,re){S.shop[f]=v;save();if(f==='name')$('#hShop').textContent=v||'ร้านกรอบรูป';if(re)renderSettings()},
-  cfgSet(f,v){S.cfg[f]=v;save()},
-  sizesSet(t){S.sizes=t.split('\n').map(s=>s.trim()).filter(s=>parseSize(s));save()},
-  logo(file){if(!file)return;const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const k=Math.min(1,360/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);S.shop.logo=c.toDataURL('image/png');save();renderSettings();toast('เพิ่มโลโก้เรียบร้อยแล้ว')};img.src=r.result};r.readAsDataURL(file)},
-  exportData(){download(`สำรองข้อมูลร้านกรอบรูป-${todayISO()}.json`,JSON.stringify(S),'application/json')},
+    S.items.filter(i=>i.cat===S.itemCat).forEach(i=>{i.price=Math.round(unitPrice(i)*(1+k/100)*100)/100;markItem(i.id)});save();renderItems();toast(`ปรับราคา ${k>0?'+':''}${k}% เรียบร้อยแล้ว`)},
+  shopSet(f,v,re){S.shop[f]=v;markSettings();save();if(f==='name')$('#hShop').textContent=v||'ร้านกรอบรูป';if(re)renderSettings()},
+  cfgSet(f,v){S.cfg[f]=v;markSettings();save()},
+  sizesSet(t){S.sizes=t.split('\n').map(s=>s.trim()).filter(s=>parseSize(s));markSettings();save()},
+  logo(file){if(!file)return;const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const k=Math.min(1,360/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);S.shop.logo=c.toDataURL('image/png');markSettings();save();renderSettings();toast('เพิ่มโลโก้เรียบร้อยแล้ว')};img.src=r.result};r.readAsDataURL(file)},
+  exportData(){const d=clone(S);d.cloud=null;d.queue=[];d.qlist=[];d.dirtyItems={};d.dirtySet=false;download(`สำรองข้อมูลร้านกรอบรูป-${todayISO()}.json`,JSON.stringify(d),'application/json')},
   importData(file){if(!file)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d||d.v!==1||!Array.isArray(d.items))throw 0;
-    ask('ต้องการนำเข้าข้อมูลจากไฟล์นี้ และแทนที่ข้อมูลทั้งหมดในอุปกรณ์นี้หรือไม่','นำเข้า',()=>{localStorage.setItem(KEY,JSON.stringify(d));load();render();toast('นำเข้าข้อมูลเรียบร้อยแล้ว')})}catch(e){toast('ไฟล์ไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง')}};r.readAsText(file)},
-  resetAll(){ask('ต้องการล้างข้อมูลทั้งหมด (วัสดุ ราคา เอกสาร และการตั้งค่า) กลับเป็นค่าเริ่มต้นหรือไม่\nเมื่อล้างแล้วจะไม่สามารถกู้คืนได้','ล้างข้อมูล',()=>{localStorage.removeItem(KEY);load();save();render();toast('ล้างข้อมูลเรียบร้อยแล้ว')},1)}
+    ask('ต้องการนำเข้าข้อมูลจากไฟล์นี้ และแทนที่ข้อมูลทั้งหมดในอุปกรณ์นี้หรือไม่','นำเข้า',()=>{localStorage.setItem(KEY,JSON.stringify(d));load();render();
+if(cloudOn())pull();else if(hashShop())connectDialog();
+window.addEventListener('focus',()=>{if(cloudOn()&&Date.now()-(S.cloud.last||0)>30000)pull()});
+window.addEventListener('online',()=>{if(cloudOn())pull()});toast('นำเข้าข้อมูลเรียบร้อยแล้ว')})}catch(e){toast('ไฟล์ไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง')}};r.readAsText(file)},
+  resetAll(){ask(cloudOn()?'ต้องการล้างข้อมูลในอุปกรณ์นี้และยกเลิกการเชื่อมต่อหรือไม่\nข้อมูลใน Google Sheets ของร้านจะไม่ถูกลบ':'ต้องการล้างข้อมูลทั้งหมด (วัสดุ ราคา เอกสาร และการตั้งค่า) กลับเป็นค่าเริ่มต้นหรือไม่\nเมื่อล้างแล้วจะไม่สามารถกู้คืนได้','ล้างข้อมูล',()=>{localStorage.removeItem(KEY);load();save();render();toast('ล้างข้อมูลเรียบร้อยแล้ว')},1)}
 };
 
 /* ---------- render ---------- */
 function render(){
   $('#hShop').textContent=S.shop.name||'ร้านกรอบรูป';
-  $('#costBtn').textContent=S.hideCost?'แสดงต้นทุน':'ซ่อนต้นทุน';
-  $('#nav').innerHTML=TABS.map(t=>`<button class="${S.tab===t.id?'on':''}" onclick="A.tab('${t.id}')"><svg viewBox="0 0 24 24" aria-hidden="true">${t.icon}</svg><span>${t.name}${t.id==='quote'&&S.draft.lines.length?`<i>${S.draft.lines.length}</i>`:''}</span></button>`).join('');
+  const cb=$('#costBtn');cb.hidden=isStaff();cb.textContent=S.hideCost?'แสดงต้นทุน':'ซ่อนต้นทุน';
+  syncUI();
+  const low=S.items.filter(isLow).length,badge=t=>t.id==='quote'&&S.draft.lines.length?`<i>${S.draft.lines.length}</i>`:t.id==='items'&&low?`<i class="red">${low}</i>`:'';
+  $('#nav').innerHTML=TABS.map(t=>`<button class="${S.tab===t.id?'on':''}" onclick="A.tab('${t.id}')"><svg viewBox="0 0 24 24" aria-hidden="true">${t.icon}</svg><span>${t.name}${badge(t)}</span></button>`).join('');
   $$('.tab').forEach(e=>e.hidden=e.id!=='tab-'+S.tab);
   ({calc:renderCalc,quote:renderQuote,table:renderTable,items:renderItems,settings:renderSettings})[S.tab]();
 }
 load();render();
+if(cloudOn())pull();else if(hashShop())connectDialog();
+window.addEventListener('focus',()=>{if(cloudOn()&&Date.now()-(S.cloud.last||0)>30000)pull()});
+window.addEventListener('online',()=>{if(cloudOn())pull()});
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>
 </body>
