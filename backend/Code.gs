@@ -1,7 +1,9 @@
 /**
  * ร้านกรอบรูป — ตัวรับ-ส่งข้อมูลระหว่างแอพกับ Google Sheets
  * ติดตั้ง: เปิด Google Sheets > ส่วนขยาย > Apps Script > วางโค้ดนี้ > Deploy เป็น Web app
- * รหัสเจ้าของ/รหัสพนักงานตั้งจากเมนู "ร้านกรอบรูป" ในไฟล์ชีต (เก็บใน Script Properties ไม่อยู่ในชีต)
+ * รหัสร้าน (รหัสเดียว ใช้ร่วมกันทั้งร้าน) ตั้งจากเมนู "ร้านกรอบรูป" ในไฟล์ชีต (เก็บใน Script Properties ไม่อยู่ในชีต)
+ * สคริปต์นี้ขอสิทธิ์เข้าถึงเฉพาะไฟล์ชีตที่ติดตั้งไว้เท่านั้น ไม่แตะไฟล์อื่นในบัญชี:
+ * @OnlyCurrentDoc
  */
 const SHEETS = { items: 'วัสดุ', buys: 'การสั่งซื้อ', moves: 'เคลื่อนไหวสต๊อก', quotes: 'ใบเสนอราคา', conf: 'ตั้งค่า' };
 const COLS = {
@@ -26,7 +28,7 @@ const CHUNK = 45000;
 function onOpen() {
   SpreadsheetApp.getUi().createMenu('ร้านกรอบรูป')
     .addItem('ตั้งค่าระบบครั้งแรก', 'setup')
-    .addItem('เปลี่ยนรหัสเข้าใช้งาน', 'setPins')
+    .addItem('เปลี่ยนรหัสร้าน', 'setPins')
     .addToUi();
 }
 function setup() {
@@ -36,14 +38,14 @@ function setup() {
 }
 function setPins() {
   const ui = SpreadsheetApp.getUi();
-  const a = ui.prompt('รหัสเจ้าของร้าน', 'ตั้งรหัสสำหรับเจ้าของ (อย่างน้อย 6 ตัวอักษร)', ui.ButtonSet.OK_CANCEL);
+  const a = ui.prompt('รหัสร้าน', 'ตั้งรหัสร้านสำหรับเข้าใช้งาน (อย่างน้อย 6 ตัวอักษร) ทุกคนในร้านใช้รหัสนี้ร่วมกัน', ui.ButtonSet.OK_CANCEL);
   if (a.getSelectedButton() !== ui.Button.OK) return;
-  const b = ui.prompt('รหัสพนักงาน', 'ตั้งรหัสสำหรับพนักงาน (อย่างน้อย 6 ตัวอักษร และต้องไม่ซ้ำกับรหัสเจ้าของ)', ui.ButtonSet.OK_CANCEL);
-  if (b.getSelectedButton() !== ui.Button.OK) return;
-  const o = a.getResponseText().trim(), s = b.getResponseText().trim();
-  if (o.length < 6 || s.length < 6 || o === s) { ui.alert('รหัสไม่ถูกต้อง: ต้องยาวอย่างน้อย 6 ตัวอักษร และรหัสทั้งสองต้องไม่ซ้ำกัน'); return; }
-  PropertiesService.getScriptProperties().setProperties({ OWNER_PIN: o, STAFF_PIN: s });
-  ui.alert('บันทึกรหัสเรียบร้อยแล้ว');
+  const o = a.getResponseText().trim();
+  if (o.length < 6) { ui.alert('รหัสไม่ถูกต้อง: ต้องยาวอย่างน้อย 6 ตัวอักษร'); return; }
+  const p = PropertiesService.getScriptProperties();
+  p.setProperty('OWNER_PIN', o);
+  p.deleteProperty('STAFF_PIN');
+  ui.alert('บันทึกรหัสร้านเรียบร้อยแล้ว');
 }
 
 /* ---------- จุดรับคำสั่งจากแอพ ---------- */
@@ -64,8 +66,8 @@ function auth_(pin) {
   const fails = Number(c.get('fail')) || 0;
   if (fails >= 30) throw new Error('ใส่รหัสผิดหลายครั้ง กรุณารอ 10 นาทีแล้วลองใหม่');
   pin = String(pin || '');
+  // ใช้รหัสร้านรหัสเดียว ทุกคนใช้งานได้ทุกส่วน (รหัสพนักงานแบบเดิมไม่ใช้แล้ว)
   if (pin && pin === p.getProperty('OWNER_PIN')) return 'owner';
-  if (pin && pin === p.getProperty('STAFF_PIN')) return 'staff';
   c.put('fail', String(fails + 1), 600);
   return null;
 }
@@ -199,7 +201,7 @@ function state_(role) {
 /* ---------- ตัวช่วย ---------- */
 function owner_(role) { if (role !== 'owner') throw new Error('คำสั่งนี้ใช้ได้เฉพาะเจ้าของร้าน'); }
 function on_(s) { return s === 'ordered' || s === 'done'; }
-function label_(role) { return role === 'owner' ? 'เจ้าของ' : 'พนักงาน'; }
+function label_(role) { return role === 'owner' ? 'ผู้ใช้งาน' : 'พนักงาน'; }
 function now_() { return new Date().toISOString(); }
 function today_() { return Utilities.formatDate(new Date(), 'Asia/Bangkok', 'yyyy-MM-dd'); }
 function r_(v, d) { const k = Math.pow(10, d); return Math.round(v * k) / k; }

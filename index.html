@@ -399,7 +399,7 @@ const cloudOn=()=>!!(S.cloud&&S.cloud.url&&S.cloud.pin);
 const isStaff=()=>cloudOn()&&S.cloud.role==='staff';
 const HC=()=>S.hideCost||isStaff(); // ซ่อนต้นทุนรวมและกำไรของงาน (พนักงานถูกซ่อนเสมอ)
 const SC=()=>S.table.showCost&&!isStaff();
-const who=()=>isStaff()?'พนักงาน':'เจ้าของ';
+const who=()=>isStaff()?'พนักงาน':cloudOn()?'ผู้ใช้งาน':'เจ้าของ';
 const bUnit=it=>(BASES[it.basis]||BASES.job).u;
 const stockable=it=>!!it&&it.cat!=='labor'&&['len','area','piece'].includes((BASES[it.basis]||{}).kind);
 const tracked=it=>stockable(it)&&it.stock!==''&&it.stock!=null;
@@ -896,7 +896,6 @@ function cloudCard(){
     <div class="toolbar" style="margin:12px 0 0"><button class="btn" onclick="A.connectForm()">เชื่อมต่อ</button></div></section>`;
   const n=S.queue.length;
   return `<section class="card"><h2>ข้อมูลกลางของร้าน <small>เชื่อมต่อกับ Google Sheets แล้ว</small></h2>
-    <div class="ln"><span>สิทธิ์การใช้งาน</span><b>${who()}</b></div>
     <div class="ln"><span>ซิงก์ล่าสุด</span><span>${c.last?fmtTs(c.last):'—'}</span></div>
     ${n?`<div class="ln"><span>รายการที่รอส่ง</span><span>${n} รายการ</span></div>`:''}
     ${c.err==='net'?'<p class="hint" style="color:var(--bad)">ขณะนี้เชื่อมต่อไม่ได้ รายการที่บันทึกไว้จะส่งขึ้นระบบเมื่ออินเทอร์เน็ตกลับมา</p>':''}
@@ -923,7 +922,7 @@ async function connect(url,pin){
     toast('เชื่อมต่อแล้ว กำลังส่งข้อมูลในอุปกรณ์นี้ขึ้นระบบกลาง');
   }else{
     if(S.queue.length)flush();else applyState(r.state);
-    toast(r.state.empty?'เชื่อมต่อแล้ว แต่ระบบกลางยังไม่มีข้อมูล กรุณาให้เจ้าของร้านเชื่อมต่อก่อน':'เชื่อมต่อเรียบร้อยแล้ว (สิทธิ์'+who()+')');
+    toast(r.state.empty?'เชื่อมต่อแล้ว แต่ระบบกลางยังไม่มีข้อมูล กรุณาให้เจ้าของร้านเชื่อมต่อก่อน':'เชื่อมต่อเรียบร้อยแล้ว');
   }
   save();render();return true;
 }
@@ -990,7 +989,7 @@ function syncUI(){
   const e=$('#syncPill');if(!e)return;
   if(!cloudOn()){e.hidden=true;return}
   const n=S.queue.length+(Object.keys(S.dirtyItems).length?1:0)+(S.dirtySet?1:0),err=S.cloud.err;
-  e.hidden=false;e.className='pill '+(err?'bad':n?'wait':'ok');e.title='สิทธิ์'+who();
+  e.hidden=false;e.className='pill '+(err?'bad':n?'wait':'ok');e.title='ข้อมูลกลางของร้าน';
   e.textContent=err==='net'?`ออฟไลน์${n?` · รอส่ง ${n}`:''}`:err==='pin'?'รหัสไม่ถูกต้อง':n?'กำลังบันทึก…':'บันทึกแล้ว';
 }
 
