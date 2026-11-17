@@ -66,7 +66,7 @@ function auth_(pin) {
   const fails = Number(c.get('fail')) || 0;
   if (fails >= 30) throw new Error('ใส่รหัสผิดหลายครั้ง กรุณารอ 10 นาทีแล้วลองใหม่');
   pin = String(pin || '');
-  // ใช้รหัสร้านรหัสเดียว ทุกคนใช้งานได้ทุกส่วน (รหัสพนักงานแบบเดิมไม่ใช้แล้ว)
+  // ใช้รหัสร้านรหัสเดียว ทุกคนใช้งานได้ทุกส่วน (รหัสที่สองแบบเดิมไม่ใช้แล้ว)
   if (pin && pin === p.getProperty('OWNER_PIN')) return 'owner';
   c.put('fail', String(fails + 1), 600);
   return null;
@@ -201,7 +201,7 @@ function state_(role) {
 /* ---------- ตัวช่วย ---------- */
 function owner_(role) { if (role !== 'owner') throw new Error('คำสั่งนี้ใช้ได้เฉพาะเจ้าของร้าน'); }
 function on_(s) { return s === 'ordered' || s === 'done'; }
-function label_(role) { return role === 'owner' ? 'ผู้ใช้งาน' : 'พนักงาน'; }
+function label_() { return 'ผู้ใช้งาน'; }
 function now_() { return new Date().toISOString(); }
 function today_() { return Utilities.formatDate(new Date(), 'Asia/Bangkok', 'yyyy-MM-dd'); }
 function r_(v, d) { const k = Math.pow(10, d); return Math.round(v * k) / k; }

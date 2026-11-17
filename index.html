@@ -397,9 +397,9 @@ const uLabel=j=>j.unit==='cm'?'ซม.':'นิ้ว';
 /* ---------- สิทธิ์ผู้ใช้และสต๊อก ---------- */
 const cloudOn=()=>!!(S.cloud&&S.cloud.url&&S.cloud.pin);
 const isStaff=()=>cloudOn()&&S.cloud.role==='staff';
-const HC=()=>S.hideCost||isStaff(); // ซ่อนต้นทุนรวมและกำไรของงาน (พนักงานถูกซ่อนเสมอ)
+const HC=()=>S.hideCost||isStaff(); // ซ่อนต้นทุนรวมและกำไรของงาน (เมื่อเปิดโหมดซ่อนต้นทุน)
 const SC=()=>S.table.showCost&&!isStaff();
-const who=()=>isStaff()?'พนักงาน':cloudOn()?'ผู้ใช้งาน':'เจ้าของ';
+const who=()=>cloudOn()?'ผู้ใช้งาน':'เจ้าของ';
 const bUnit=it=>(BASES[it.basis]||BASES.job).u;
 const stockable=it=>!!it&&it.cat!=='labor'&&['len','area','piece'].includes((BASES[it.basis]||{}).kind);
 const tracked=it=>stockable(it)&&it.stock!==''&&it.stock!=null;
@@ -809,7 +809,7 @@ function listView(){
   const cat=S.itemCat,list=S.items.filter(i=>i.cat===cat),st=isStaff(),ro=st?' disabled':'';
   return `<section class="card"><h2>วัสดุและราคา <small>แก้ไขได้ทุกช่อง ระบบบันทึกโดยอัตโนมัติ</small></h2>
     <div class="chips">${CATS.map(c=>`<button class="chip sm${c.id===cat?' on':''}" onclick="A.itemCat('${c.id}')">${c.name} (${S.items.filter(i=>i.cat===c.id).length})</button>`).join('')}</div>
-    <p class="hint">${st?'พนักงานแก้ไขต้นทุนและข้อมูลวัสดุได้ ส่วนราคาขายและราคาขั้นต่ำกำหนดโดยเจ้าของร้าน':`ราคาเริ่มต้นเป็นเพียงตัวอย่าง กรุณาปรับเป็นราคาจริงของร้าน · หากเว้นช่อง “ราคาขาย” ว่างไว้ ระบบจะคำนวณจากต้นทุนบวกกำไร ${num(S.cfg.markup)}% โดยอัตโนมัติ`}</p></section>
+    <p class="hint">${st?'ราคาขายและราคาขั้นต่ำกำหนดโดยเจ้าของร้าน':`ราคาเริ่มต้นเป็นเพียงตัวอย่าง กรุณาปรับเป็นราคาจริงของร้าน · หากเว้นช่อง “ราคาขาย” ว่างไว้ ระบบจะคำนวณจากต้นทุนบวกกำไร ${num(S.cfg.markup)}% โดยอัตโนมัติ`}</p></section>
   ${list.map(it=>{const B=BASES[it.basis]||BASES.job,nf=(f,label,ph='',dis='')=>`<label class="f">${label}<input type="number" inputmode="decimal" min="0" step="any" value="${esc(it[f])}" placeholder="${ph}"${dis} oninput="A.itemSet('${it.id}','${f}',this.value)"></label>`;
     return `<div class="item">
     <div class="row1"><input type="text" aria-label="ชื่อวัสดุ" value="${esc(it.name)}" placeholder="ชื่อวัสดุ / บริการ" oninput="A.itemSet('${it.id}','name',this.value)">${st?'':`<button class="x" title="ลบ" aria-label="ลบ" onclick="A.itemDel('${it.id}')">×</button>`}</div>
@@ -899,7 +899,7 @@ function cloudCard(){
     <div class="ln"><span>ซิงก์ล่าสุด</span><span>${c.last?fmtTs(c.last):'—'}</span></div>
     ${n?`<div class="ln"><span>รายการที่รอส่ง</span><span>${n} รายการ</span></div>`:''}
     ${c.err==='net'?'<p class="hint" style="color:var(--bad)">ขณะนี้เชื่อมต่อไม่ได้ รายการที่บันทึกไว้จะส่งขึ้นระบบเมื่ออินเทอร์เน็ตกลับมา</p>':''}
-    <div class="toolbar" style="margin:12px 0 0"><button class="btn" onclick="A.syncNow()">ซิงก์ข้อมูลตอนนี้</button>${isStaff()?'':'<button class="btn o" onclick="A.copyStaffLink()">คัดลอกลิงก์สำหรับพนักงาน</button>'}<button class="btn danger" onclick="A.disconnect()">ยกเลิกการเชื่อมต่อ</button></div></section>`;
+    <div class="toolbar" style="margin:12px 0 0"><button class="btn" onclick="A.syncNow()">ซิงก์ข้อมูลตอนนี้</button>${isStaff()?'':'<button class="btn o" onclick="A.copyStaffLink()">คัดลอกลิงก์เข้าใช้งาน</button>'}<button class="btn danger" onclick="A.disconnect()">ยกเลิกการเชื่อมต่อ</button></div></section>`;
 }
 function connectDialog(msg){
   const d=$('#dlg');
